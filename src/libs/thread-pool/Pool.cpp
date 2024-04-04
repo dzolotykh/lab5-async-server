@@ -3,7 +3,7 @@
 #include <exception>
 
 void ThreadPool::Pool::run_worker(int id) {
-    while (true) {
+    while (!stop_flag) {
         std::unique_lock<std::mutex> lock(q_mutex); // блокируем мьютекс для работы с очередью
         q_cv.wait(lock, [this](){ return (!q.empty() || stop_flag);}); // ждем, пока не появится задача или не придет сигнал на завершение
         if (stop_flag) { // если пришел сигнал на завершение, завершаем работу
@@ -14,6 +14,7 @@ void ThreadPool::Pool::run_worker(int id) {
         update_status(id, worker_status::ACTIVE); // поток взял на себя задачу
         ThreadPool::Task t = std::move(q.front()); // забираем задачу из очереди
         q.pop(); // удаляем задачу из очереди
+        tasks_in_queue--; // уменьшаем счетчик задач
         lock.unlock(); // разблокируем мьютекс (чтобы другие потоки могли работать с очередью)
         t(); // выполняем задачу
         update_status(id, worker_status::WAITING); // выполнили задачу, обновляем статус
@@ -32,39 +33,40 @@ ThreadPool::Pool::Pool(int _num_threads, ThreadPool::Pool::destructor_policy _po
 void ThreadPool::Pool::add_task(const ThreadPool::Task &t) {
     std::lock_guard<std::mutex> lock(q_mutex); // блокируем очередь, чтобы добавить туда задачу
     q.push(t); // добавляем задачу в очередь
+    tasks_in_queue++; // увеличиваем счетчик задач
     q_cv.notify_one(); // оповещаем один из свободных потоков, что появилась задача
 }
 
 size_t ThreadPool::Pool::size() {
-    std::lock_guard<std::mutex> lock(q_mutex); // блокируем очередь, чтобы узнать ее размер
-    return q.size();
+    return tasks_in_queue.load();
 }
 
-/*
- * Грубо обрывает всю работу потоков. Поэтому, пока что destruction_policy ни на что не влияет
- * В будущем в зависимости от этого будет или приостанавливаться взятие новых задач,
- * или завершаться как есть сейчас
- */
 ThreadPool::Pool::~Pool() {
+    if (policy == destructor_policy::JOIN) {
+        wait_all();
+    }
     stop_flag = true;
     q_cv.notify_all();
     for (auto &i : all_threads) {
-        if (policy == destructor_policy::JOIN) {
-            i.join();
-        } else {
-            i.detach();
-        }
+        i.detach();
     }
 }
 
 void ThreadPool::Pool::update_status(int id, ThreadPool::Pool::worker_status st) {
     std::lock_guard<std::mutex> lock(status_mutex);
     thread_status[id] = st;
+    if (st == worker_status::WAITING) {
+        waiting_threads++;
+    } else {
+        waiting_threads--;
+    }
+    status_cv.notify_all();
 }
 
-// TODO реализовать
-void ThreadPool::Pool::join_all() {
-    throw std::logic_error("function not implemented");
+// метод блокирует вызвавший его поток до тех пор, пока все задачи из очереди не закончатся
+void ThreadPool::Pool::wait_all() {
+    std::unique_lock<std::mutex> lock(status_mutex);
+    status_cv.wait(lock, [this](){ return (waiting_threads == num_threads && tasks_in_queue == 0);});
 }
 
 

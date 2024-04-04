@@ -20,22 +20,27 @@ namespace ThreadPool {
         };
 
         const int num_threads;
+        std::vector<std::thread> all_threads;
+
         std::mutex q_mutex;
         std::condition_variable q_cv;
         std::queue<Task> q;
-        std::vector<std::thread> all_threads;
+        std::atomic<size_t> tasks_in_queue = 0;
+
         std::atomic<bool> stop_flag = false;
 
         std::unordered_map<int, worker_status> thread_status;
         std::mutex status_mutex;
+        std::atomic<int> waiting_threads = 0;
+        std::condition_variable status_cv;
 
         void run_worker(int id);
 
         void update_status(int id, worker_status st); // потокобезопасно обновляет статус потока
     public:
         enum class destructor_policy {
-            JOIN,
-            DETACH
+            JOIN, // перед деструктором будем ждать завершения всех задач
+            DETACH // грубо все оборвем
         };
 
         destructor_policy policy;
@@ -44,7 +49,7 @@ namespace ThreadPool {
 
         void add_task(const Task &t);
 
-        void join_all();
+        void wait_all();
 
         size_t size();
 

@@ -113,6 +113,22 @@ void run_serv() {
         // chill
     }
 }
+
+using namespace std;
+
+mutex mtx;
+int cock = 0;
+
+void func() {
+    this_thread::sleep_for(chrono::milliseconds(500));
+    lock_guard lock(mtx);
+    cock++;
+    cout << cock << endl;
+}
+
 int main() {
-    ThreadPool::Pool pool(2);
+    ThreadPool::Pool pool(2, ThreadPool::Pool::destructor_policy::JOIN);
+    for (int i = 0; i < 20; i++) {
+        pool.add_task(func);
+    }
 }
