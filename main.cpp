@@ -10,6 +10,8 @@
 #include <sstream>
 #include <memory>
 
+#include <Pool.h>
+
 template<typename logger_t>
 struct ServerParams {
     ServerParams(unsigned int port, logger_t logger, unsigned int max_connections_in_queue, unsigned int max_process,
@@ -87,11 +89,11 @@ void create_server(ServerParams<logger_t> params) {
     }
 }
 
-int main() {
+void run_serv() {
     auto logger = [](const std::string &s) {
         auto now = std::chrono::system_clock::now();
-        time_t penis = std::chrono::system_clock::to_time_t(now);
-        std::cout << std::put_time(std::localtime(&penis), "[%Y-%m-%d %X] ");
+        time_t raw_time = std::chrono::system_clock::to_time_t(now);
+        std::cout << std::put_time(std::localtime(&raw_time), "[%Y-%m-%d %X] ");
         std::cout << s << std::endl;
     };
 
@@ -110,4 +112,7 @@ int main() {
     while (1) {
         // chill
     }
+}
+int main() {
+    ThreadPool::Pool pool(2);
 }
