@@ -77,14 +77,14 @@ void create_server(ServerParams<logger_t> params) {
         if (sock < 0) {
             throw std::runtime_error("Произошла ошибка при соединении сокета с адресом. Код ошибки: " + std::to_string(errno));
         }
-        logger("Опааа бляяя.... ");
+        logger("Подключился.... ");
         while (true) {
             size_t bytes_read = recv(sock, buff.get(), 1024, 0);
             if(bytes_read <= 0)
                 break;
             send(sock, buff.get(), bytes_read, 0);
         }
-        logger("Отвалился гандончик");
+        logger("Отключился");
         shutdown(sock, SHUT_RDWR);
     }
 }
@@ -117,13 +117,13 @@ void run_serv() {
 using namespace std;
 
 mutex mtx;
-int cock = 0;
+int counter = 0;
 
 void func() {
     this_thread::sleep_for(chrono::milliseconds(500));
     lock_guard lock(mtx);
-    cock++;
-    cout << cock << endl;
+    counter++;
+    cout << counter << endl;
 }
 
 int main() {
