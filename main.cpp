@@ -90,8 +90,8 @@ void create_server(ServerParams<logger_t> params) {
 int main() {
     auto logger = [](const std::string &s) {
         auto now = std::chrono::system_clock::now();
-        time_t penis = std::chrono::system_clock::to_time_t(now);
-        std::cout << std::put_time(std::localtime(&penis), "[%Y-%m-%d %X] ");
+        time_t raw_time = std::chrono::system_clock::to_time_t(now);
+        std::cout << std::put_time(std::localtime(&raw_time), "[%Y-%m-%d %X] ");
         std::cout << s << std::endl;
     };
 
