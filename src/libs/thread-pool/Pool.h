@@ -54,6 +54,7 @@ class Pool
     void add_task(const Task& t);
 
     void wait_all();
+    void detach_all();
 
     size_t size();
 

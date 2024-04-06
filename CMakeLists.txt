@@ -9,6 +9,8 @@ add_subdirectory(src/libs/thread-pool)
 include_directories(src/libs/graph-bmp-generator)
 add_subdirectory(src/libs/graph-bmp-generator)
 
-add_executable(main main.cpp)
+add_executable(main main.cpp
+        src/server/Server.h
+        src/server/Server.cpp)
 
 target_link_libraries(main thread-pool graph-bmp-generator)

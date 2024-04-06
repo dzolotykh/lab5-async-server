@@ -57,6 +57,15 @@ ThreadPool::Pool::~Pool()
     {
         wait_all();
     }
+    detach_all();
+}
+
+void ThreadPool::Pool::detach_all()
+{
+    if (stop_flag)
+    {  // если уже кто-то занимается остановкой треда
+        return;
+    }
     stop_flag = true;
     q_cv.notify_all();
     for (auto& i : all_threads)
@@ -83,6 +92,10 @@ void ThreadPool::Pool::update_status(int id, ThreadPool::Pool::worker_status st)
 // метод блокирует вызвавший его поток до тех пор, пока все задачи из очереди не закончатся
 void ThreadPool::Pool::wait_all()
 {
+    if (stop_flag)
+    {
+        return;
+    }
     std::unique_lock<std::mutex> lock(status_mutex);
     status_cv.wait(lock,
                    [this]() { return (waiting_threads == num_threads && tasks_in_queue == 0); });
