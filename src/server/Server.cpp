@@ -54,13 +54,20 @@ void Server::prepare_listener_socket() {
     }
 }
 
-std::vector<Connection> Server::process_listener(pollfd listener) {
-    std::vector<Connection> result;
+/*
+ * Функция process_listener принимает на вход структуру pollfd, которая содержит информацию о сокете-слушателе.
+ * Если в структуре pollfd есть событие POLLERR, то функция бросает исключение с сообщением ERROR_POLL_LISTENER.
+ * Если произошло событие POLLIN, то функция принимает новое подключение и добавляет его в вектор result.
+ * В конце функция возвращает вектор c новыми подключениями.
+ */
+std::vector<socket_t> Server::process_listener(pollfd listener) {
+    std::vector<socket_t> result;
 
     if (listener.revents & POLLERR) {
         throw std::runtime_error(ERROR_POLL_LISTENER + std::to_string(POLLERR));
     }
 
+    // эту часть надо переписать: в revents хранится не количество событий, а их битовая маска
     for (int i = 0; i < listener.revents; ++i) {
         sockaddr_in peer{};
         socklen_t peer_size = sizeof(peer);
@@ -73,7 +80,7 @@ std::vector<Connection> Server::process_listener(pollfd listener) {
             }
         }
         set_nonblock(channel);
-        result.push_back({channel, SocketType::client});
+        result.push_back({channel});
         use_logger("Создано подключение для нового клиента.");
     }
     return result;
@@ -117,45 +124,30 @@ bool Server::process_client(pollfd fd, socket_t client) {
 void Server::start() {
     prepare_listener_socket();
 
-    conn_sockets.push_back({listener_socket, SocketType::listener});
-    conn_sockets_pollfd.push_back({
-        .fd = listener_socket,
-        .events = POLLIN,
-    });
+    polling_wrapper = PollingWrapper(listener_socket);
+
     use_logger(start_message());
 
     while (true) {
-        poll(conn_sockets_pollfd.data(), conn_sockets_pollfd.size(), -1);
+        auto [connections, pollfds] = polling_wrapper.get();
+        poll(pollfds.data(), pollfds.size(), 1000);
         // Проверяем, есть ли новые подключения
-        auto new_connections = process_listener(conn_sockets_pollfd.back());
+        auto new_connections = process_listener(pollfds.back());
         // Обрабатываем все старые подключения (пока что просто проверим, что они
         // живы)
-        for (size_t i = 0; i + 1 < conn_sockets_pollfd.size(); ++i) {
-            bool result = process_client(conn_sockets_pollfd[i], conn_sockets[i].socket);
+
+        for (size_t i = 0; i + 1 < connections.size(); ++i) {
+            bool result = process_client(pollfds[i], connections[i]);
             if (!result) {
-                conn_sockets[i].socket = -1;
-            }
-        }
-        // Объединим новые подключения и еще живые старые в 1 список
-        std::vector<Connection> updated_connections;
-        std::vector<pollfd> updated_pollfd;
-        for (const auto &conn : new_connections) {
-            updated_connections.push_back(conn);
-            updated_pollfd.push_back({
-                .fd = conn.socket,
-                .events = POLLIN | POLLHUP | POLLERR,
-            });
-        }
-
-        for (size_t i = 0; i < conn_sockets.size(); ++i) {
-            if (conn_sockets[i].socket != -1) {
-                updated_connections.push_back(conn_sockets[i]);
-                updated_pollfd.push_back(conn_sockets_pollfd[i]);
+                connections[i] = -1;
             }
         }
 
-        conn_sockets = std::move(updated_connections);
-        conn_sockets_pollfd = std::move(updated_pollfd);
+        polling_wrapper = PollingWrapper(connections, pollfds);
+
+        polling_wrapper.remove_disconnected();
+
+        polling_wrapper.add_connection(new_connections);
     }
 }
 
