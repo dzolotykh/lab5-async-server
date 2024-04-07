@@ -4,7 +4,8 @@
 #include <utility>
 #include "log.h"
 
-void Server::use_logger(const std::string& message) {
+namespace Server {
+void Server::use_logger(const std::string &message) {
     std::lock_guard<std::mutex> lock(logger_mtx);
     params.logger(message);
 }
@@ -22,7 +23,7 @@ std::string Server::start_message() const {
 
 Server::Server(ServerParams _params) : params(std::move(_params)) {}
 
-void Server::set_nonblock(Server::socket_t socket) {
+void Server::set_nonblock(socket_t socket) {
     int status = fcntl(socket, F_SETFL, fcntl(socket, F_GETFL, 0) | O_NONBLOCK);
     if (status < 0) {
         throw std::runtime_error(ERROR_SET_NONBLOCK + std::to_string(errno));
@@ -43,7 +44,7 @@ void Server::prepare_listener_socket() {
         throw std::runtime_error(ERROR_CREATE_SOCKET + std::to_string(errno));
     }
 
-    int bind_status = bind(listener_socket, (sockaddr*)&socket_address, sizeof(socket_address));
+    int bind_status = bind(listener_socket, (sockaddr *)&socket_address, sizeof(socket_address));
 
     if (bind_status < 0) {
         throw std::runtime_error(ERROR_BIND + std::to_string(errno));
@@ -53,7 +54,7 @@ void Server::prepare_listener_socket() {
     }
 }
 
-std::vector<Server::Connection> Server::process_listener(pollfd listener) {
+std::vector<Connection> Server::process_listener(pollfd listener) {
     std::vector<Connection> result;
 
     if (listener.revents & POLLERR) {
@@ -63,7 +64,7 @@ std::vector<Server::Connection> Server::process_listener(pollfd listener) {
     for (int i = 0; i < listener.revents; ++i) {
         sockaddr_in peer{};
         socklen_t peer_size = sizeof(peer);
-        socket_t channel = accept(listener_socket, (sockaddr*)&peer, &peer_size);
+        socket_t channel = accept(listener_socket, (sockaddr *)&peer, &peer_size);
         if (channel < 0) {
             if (errno == EWOULDBLOCK) {
                 break;
@@ -138,11 +139,11 @@ void Server::start() {
         // Объединим новые подключения и еще живые старые в 1 список
         std::vector<Connection> updated_connections;
         std::vector<pollfd> updated_pollfd;
-        for (auto& conn : new_connections) {
+        for (const auto &conn : new_connections) {
             updated_connections.push_back(conn);
             updated_pollfd.push_back({
                 .fd = conn.socket,
-                .events = POLLIN,
+                .events = POLLIN | POLLHUP | POLLERR,
             });
         }
 
@@ -159,3 +160,4 @@ void Server::start() {
 }
 
 Server::~Server() {}
+}    // namespace Server

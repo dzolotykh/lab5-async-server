@@ -11,13 +11,13 @@ auto logger = [](const std::string& s) {
     std::cout << s << std::endl;
 };
 
-void run_server(Server& serv) {
+void run_server(Server::Server& serv) {
     serv.start();
 }
 
 int main() {
-    ServerParams params(8081, logger, 10, 10, 1024 * 1024);
-    Server server(params);
+    Server::ServerParams params(8081, logger, 10, 10, 1024 * 1024);
+    Server::Server server(params);
     try {
         run_server(server);
     } catch (const std::runtime_error& err) {

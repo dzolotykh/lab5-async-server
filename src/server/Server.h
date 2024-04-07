@@ -11,8 +11,10 @@
 #include <unistd.h>
 #include <sstream>
 
+namespace Server {
+
 struct ServerParams {
-    using logger_t = std::function<void(const std::string&)>;
+    using logger_t = std::function<void(const std::string &)>;
 
     ServerParams(unsigned int port, logger_t logger, unsigned int max_connections_in_queue,
                  unsigned int max_process, unsigned int buff_size)
@@ -22,10 +24,13 @@ struct ServerParams {
           max_process(max_process),
           buff_size(buff_size) {}
 
-    ServerParams(const ServerParams& other) = default;
-    ServerParams& operator=(const ServerParams& other) = default;
-    ServerParams(ServerParams&& other) = default;
-    ServerParams& operator=(ServerParams&& other) = default;
+    ServerParams(const ServerParams &other) = default;
+
+    ServerParams &operator=(const ServerParams &other) = default;
+
+    ServerParams(ServerParams &&other) = default;
+
+    ServerParams &operator=(ServerParams &&other) = default;
 
     unsigned int port;
     logger_t logger;
@@ -34,37 +39,45 @@ struct ServerParams {
     unsigned int buff_size;
 };
 
+using logger_t = ServerParams::logger_t;
+using socket_t = int;
+
+enum class SocketType { listener, client };
+
+struct Connection {
+    socket_t socket;
+    SocketType type;
+};
+
 class Server {
    public:
-    using logger_t = ServerParams::logger_t;
-    using socket_t = int;
-
-    enum class SocketType {
-        listener,
-        client,
-    };
-
-    struct Connection {
-        socket_t socket;
-        SocketType type;
-    };
-
     explicit Server(ServerParams params);
+
     ~Server();
-    Server(const Server&) = delete;
-    Server& operator=(const Server&) = delete;
-    Server(Server&&) = delete;
-    Server& operator=(Server&&) = delete;
+
+    Server(const Server &) = delete;
+
+    Server &operator=(const Server &) = delete;
+
+    Server(Server &&) = delete;
+
+    Server &operator=(Server &&) = delete;
 
     void start();
 
    private:
     [[nodiscard]] std::string start_message() const;
+
     void prepare_listener_socket();
-    void use_logger(const std::string& message);
+
+    void use_logger(const std::string &message);
+
     static void set_nonblock(socket_t socket);
+
     std::vector<Connection> process_listener(pollfd listener);
+
     bool process_client(pollfd fd, socket_t client);
+
     std::string read_from_socket(socket_t socket);
 
     ServerParams params;
@@ -73,5 +86,6 @@ class Server {
     std::vector<Connection> conn_sockets;
     std::vector<pollfd> conn_sockets_pollfd;
 };
+}    // namespace Server
 
 #endif    // LAB5_SERVER_H
