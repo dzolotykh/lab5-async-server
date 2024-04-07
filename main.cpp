@@ -21,18 +21,13 @@ int main()
 {
     ServerParams params(8081, logger, 10, 10, 1024 * 1024);
     Server       server(params);
-    std::thread  server_thread(run_server, std::ref(server));
-    while (true)
+    try
     {
-        std::string command;
-        std::cin >> command;
-        if (command == "exit")
-        {
-            server.gentle_shutdown();
-            break;
-        }
+        run_server(server);
     }
-
-    server_thread.join();
-    return 0;
+    catch (const std::runtime_error& err)
+    {
+        logger(err.what());
+        return 0;
+    }
 }

@@ -9,6 +9,8 @@ add_subdirectory(src/libs/thread-pool)
 include_directories(src/libs/graph-bmp-generator)
 add_subdirectory(src/libs/graph-bmp-generator)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_executable(main main.cpp
         src/server/Server.h
         src/server/Server.cpp)

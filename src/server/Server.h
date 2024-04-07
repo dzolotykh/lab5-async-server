@@ -8,6 +8,7 @@
 #include <functional>
 #include <iostream>
 #include <netinet/in.h>
+#include <poll.h>
 #include <sstream>
 #include <string>
 #include <sys/ioctl.h>
@@ -19,7 +20,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
-#include <poll.h>
 
 struct ServerParams
 {
@@ -64,7 +64,7 @@ class Server
         SocketType type;
     };
 
-    Server(const ServerParams& params);
+    explicit Server(ServerParams  params);
     ~Server();
     Server(const Server&) = delete;
     Server& operator=(const Server&) = delete;
@@ -72,29 +72,21 @@ class Server
     Server& operator=(Server&&) = delete;
 
     void start();
-    void hard_shutdown();
-    void gentle_shutdown();
 
   private:
-    std::string start_message() const;
-    void        prepare_listener_socket();
-    void        use_logger(const std::string& message);
-    void        select_endpoint(socket_t connection_socket);
-    static void set_nonblock(socket_t socket);
-    void process_listener(pollfd listener);
+    std::string             start_message() const;
+    void                    prepare_listener_socket();
+    void                    use_logger(const std::string& message);
+    static void             set_nonblock(socket_t socket);
+    std::vector<Connection> process_listener(pollfd listener);
+    bool                    process_client(pollfd fd, socket_t client);
+    std::string             read_from_socket(socket_t socket);
 
-    std::unordered_map<std::string, std::function<void()>> endpoints;
-    ServerParams                                           params;
-    socket_t                                               listener_socket;
-    std::atomic<bool>                                      is_running = false;
-    std::atomic<bool>                                      hard_shutdown_flag = false;
-    ThreadPool::Pool                                       pool;
-    std::unique_ptr<char*>                                 buff;
-    std::mutex                                             logger_mtx;
-    std::mutex                                             new_connection_mtx;
-    std::condition_variable                                new_connection_cv;
-    std::vector<Connection>                                conn_sockets;
-    std::vector<pollfd>                                    conn_sockets_pollfd;
+    ServerParams            params;
+    socket_t                listener_socket{};
+    std::mutex              logger_mtx;
+    std::vector<Connection> conn_sockets;
+    std::vector<pollfd>     conn_sockets_pollfd;
 };
 
 #endif  //LAB5_SERVER_H
