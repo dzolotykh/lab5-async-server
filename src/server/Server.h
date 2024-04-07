@@ -1,25 +1,15 @@
 #ifndef LAB5_SERVER_H
 #define LAB5_SERVER_H
 
-#include <Pool.h>
-#include <atomic>
-#include <csignal>
+#include <iostream> // for debugging
+
 #include <fcntl.h>
-#include <functional>
-#include <iostream>
 #include <netinet/in.h>
 #include <poll.h>
 #include <sstream>
-#include <string>
-#include <sys/ioctl.h>
 #include <sys/poll.h>
 #include <sys/socket.h>
-#include <sys/types.h>
-#include <thread>
 #include <unistd.h>
-#include <unordered_map>
-#include <unordered_set>
-#include <utility>
 
 struct ServerParams
 {
@@ -74,7 +64,7 @@ class Server
     void start();
 
   private:
-    std::string             start_message() const;
+    [[nodiscard]] std::string             start_message() const;
     void                    prepare_listener_socket();
     void                    use_logger(const std::string& message);
     static void             set_nonblock(socket_t socket);
