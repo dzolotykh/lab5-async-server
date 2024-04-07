@@ -1,17 +1,15 @@
 #include "Server.h"
-#include "log.h"
+#include <sys/poll.h>
 #include <stdexcept>
 #include <utility>
-#include <sys/poll.h>
+#include "log.h"
 
-void Server::use_logger(const std::string& message)
-{
+void Server::use_logger(const std::string& message) {
     std::lock_guard<std::mutex> lock(logger_mtx);
     params.logger(message);
 }
 
-std::string Server::start_message() const
-{
+std::string Server::start_message() const {
     std::stringstream hello;
     hello << "\n✅ Сервер запущен. Параметры: \n";
     hello << "⚡️ Порт: " << params.port << "\n";
@@ -22,22 +20,16 @@ std::string Server::start_message() const
     return hello.str();
 }
 
-Server::Server(ServerParams  _params)
-    : params(std::move(_params))
-{
-}
+Server::Server(ServerParams _params) : params(std::move(_params)) {}
 
-void Server::set_nonblock(Server::socket_t socket)
-{
+void Server::set_nonblock(Server::socket_t socket) {
     int status = fcntl(socket, F_SETFL, fcntl(socket, F_GETFL, 0) | O_NONBLOCK);
-    if (status < 0)
-    {
+    if (status < 0) {
         throw std::runtime_error(ERROR_SET_NONBLOCK + std::to_string(errno));
     }
 }
 
-void Server::prepare_listener_socket()
-{
+void Server::prepare_listener_socket() {
     set_nonblock(listener_socket);
 
     sockaddr_in socket_address{};
@@ -47,64 +39,52 @@ void Server::prepare_listener_socket()
 
     listener_socket = socket(AF_INET, SOCK_STREAM, 0);
 
-    if (listener_socket < 0)
-    {
-        throw std::runtime_error(ERROR_CREATE_SOCKET +
-                                 std::to_string(errno));
+    if (listener_socket < 0) {
+        throw std::runtime_error(ERROR_CREATE_SOCKET + std::to_string(errno));
     }
 
     int bind_status = bind(listener_socket, (sockaddr*)&socket_address, sizeof(socket_address));
 
-    if (bind_status < 0)
-    {
+    if (bind_status < 0) {
         throw std::runtime_error(ERROR_BIND + std::to_string(errno));
     }
-    if (listen(listener_socket, params.max_connections_in_queue) < 0)
-    {
+    if (listen(listener_socket, params.max_connections_in_queue) < 0) {
         throw std::runtime_error(ERROR_LISTEN + std::to_string(errno));
     }
 }
 
-std::vector<Server::Connection> Server::process_listener(pollfd listener)
-{
+std::vector<Server::Connection> Server::process_listener(pollfd listener) {
     std::vector<Connection> result;
 
-    if (listener.revents & POLLERR)
-    {
+    if (listener.revents & POLLERR) {
         throw std::runtime_error(ERROR_POLL_LISTENER + std::to_string(POLLERR));
     }
 
-    for (int i = 0; i < listener.revents; ++i)
-    {
+    for (int i = 0; i < listener.revents; ++i) {
         sockaddr_in peer{};
-        socklen_t   peer_size = sizeof(peer);
-        socket_t    channel = accept(listener_socket, (sockaddr*)&peer, &peer_size);
-        if (channel < 0)
-        {
+        socklen_t peer_size = sizeof(peer);
+        socket_t channel = accept(listener_socket, (sockaddr*)&peer, &peer_size);
+        if (channel < 0) {
             if (errno == EWOULDBLOCK) {
                 break;
-            }
-            else {
+            } else {
                 throw std::runtime_error(ERROR_ACCEPT + std::to_string(errno));
             }
         }
         set_nonblock(channel);
-        result.push_back({ channel, SocketType::client });
+        result.push_back({channel, SocketType::client});
         use_logger("Создано подключение для нового клиента.");
     }
     return result;
 }
 
-std::string Server::read_from_socket(socket_t socket)
-{
-    char        buffer[1024];
+std::string Server::read_from_socket(socket_t socket) {
+    char buffer[1024];
     std::string data;
 
-    while (true)
-    {
+    while (true) {
         ssize_t bytes_read = recv(socket, buffer, sizeof(buffer), MSG_DONTWAIT);
-        if (bytes_read <= 0)
-        {
+        if (bytes_read <= 0) {
             // Если нет данных для чтения или произошла ошибка, выходим из цикла
             break;
         }
@@ -114,23 +94,18 @@ std::string Server::read_from_socket(socket_t socket)
     return data;
 }
 
-bool Server::process_client(pollfd fd, socket_t client)
-{
-    if (fd.revents & POLLERR)
-    {
+bool Server::process_client(pollfd fd, socket_t client) {
+    if (fd.revents & POLLERR) {
         return false;
     }
-    if (fd.revents & POLLHUP)
-    {
+    if (fd.revents & POLLHUP) {
         use_logger("Пользователь отключился.");
         close(client);
         return false;
     }
-    if (fd.revents & POLLIN)
-    {
+    if (fd.revents & POLLIN) {
         std::string data = read_from_socket(client);
-        if (data.empty())
-        {
+        if (data.empty()) {
             return false;
         }
         use_logger("Получены данные: " + data);
@@ -138,36 +113,32 @@ bool Server::process_client(pollfd fd, socket_t client)
     return true;
 }
 
-void Server::start()
-{
+void Server::start() {
     prepare_listener_socket();
 
-    conn_sockets.push_back({ listener_socket, SocketType::listener });
+    conn_sockets.push_back({listener_socket, SocketType::listener});
     conn_sockets_pollfd.push_back({
         .fd = listener_socket,
         .events = POLLIN,
     });
     use_logger(start_message());
 
-    while (true)
-    {
+    while (true) {
         poll(conn_sockets_pollfd.data(), conn_sockets_pollfd.size(), -1);
         // Проверяем, есть ли новые подключения
         auto new_connections = process_listener(conn_sockets_pollfd.back());
-        // Обрабатываем все старые подключения (пока что просто проверим, что они живы)
-        for (size_t i = 0; i + 1 < conn_sockets_pollfd.size(); ++i)
-        {
+        // Обрабатываем все старые подключения (пока что просто проверим, что они
+        // живы)
+        for (size_t i = 0; i + 1 < conn_sockets_pollfd.size(); ++i) {
             bool result = process_client(conn_sockets_pollfd[i], conn_sockets[i].socket);
-            if (!result)
-            {
+            if (!result) {
                 conn_sockets[i].socket = -1;
             }
         }
         // Объединим новые подключения и еще живые старые в 1 список
         std::vector<Connection> updated_connections;
-        std::vector<pollfd>     updated_pollfd;
-        for (auto& conn : new_connections)
-        {
+        std::vector<pollfd> updated_pollfd;
+        for (auto& conn : new_connections) {
             updated_connections.push_back(conn);
             updated_pollfd.push_back({
                 .fd = conn.socket,
@@ -175,10 +146,8 @@ void Server::start()
             });
         }
 
-        for (size_t i = 0; i < conn_sockets.size(); ++i)
-        {
-            if (conn_sockets[i].socket != -1)
-            {
+        for (size_t i = 0; i < conn_sockets.size(); ++i) {
+            if (conn_sockets[i].socket != -1) {
                 updated_connections.push_back(conn_sockets[i]);
                 updated_pollfd.push_back(conn_sockets_pollfd[i]);
             }
@@ -189,7 +158,4 @@ void Server::start()
     }
 }
 
-Server::~Server()
-{
-
-}
+Server::~Server() {}

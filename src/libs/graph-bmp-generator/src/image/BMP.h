@@ -7,9 +7,8 @@
 #include <map>
 #include <vector>
 
-class BMP
-{
-  public:
+class BMP {
+   public:
     BMP(size_t _width, size_t _height);
 
     // saves image in specified path
@@ -27,43 +26,38 @@ class BMP
     // draws any not negative number in point (x, y)
     void draw_number(size_t x, size_t y, int number, size_t scale);
 
-  private:
+   private:
     std::vector<uint8_t> pixels;
-    const size_t         width, height;
+    const size_t width, height;
 
     const size_t between_digits_offset = 10;
 
-    inline size_t get_pos(size_t x, size_t y) const noexcept
-    {
-        return (x * height + y) * 3;
-    }
+    inline size_t get_pos(size_t x, size_t y) const noexcept { return (x * height + y) * 3; }
 
-    struct Header
-    {
+    struct Header {
         std::string encoding_type = "BM";
-        int         file_size;
-        size_t      width;
-        size_t      height;
+        int file_size;
+        size_t width;
+        size_t height;
         std::string reserved = "\0\0\0\0";
-        int         data_offset = 54;
-        int         header_size = 40;
-        short       planes = 1;
-        short       bpp = 24;
-        int         compression = 0;
-        int         data_size;
-        int         h_resolution = 0;
-        int         v_resolution = 0;
-        int         colors = 0;
-        int         importantColors = 0;
+        int data_offset = 54;
+        int header_size = 40;
+        short planes = 1;
+        short bpp = 24;
+        int compression = 0;
+        int data_size;
+        int h_resolution = 0;
+        int v_resolution = 0;
+        int colors = 0;
+        int importantColors = 0;
 
         Header(size_t _width, size_t _height)
-            : width(_width), height(_height), data_size(3 * _width * _height),
-              file_size(54 + 3 * _width * _height)
-        {
-        }
+            : width(_width),
+              height(_height),
+              data_size(3 * _width * _height),
+              file_size(54 + 3 * _width * _height) {}
 
-        std::vector<std::pair<const char*, int>> get_bytes() const noexcept
-        {
+        std::vector<std::pair<const char*, int>> get_bytes() const noexcept {
             std::vector<std::pair<const char*, int>> bytes_arr;
 
             bytes_arr.emplace_back(reinterpret_cast<const char*>(&encoding_type), 2);
@@ -87,4 +81,4 @@ class BMP
     };
 };
 
-#endif  // BMP_H
+#endif    // BMP_H
