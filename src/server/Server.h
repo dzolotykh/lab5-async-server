@@ -59,8 +59,7 @@ struct PollingWrapper {
     explicit PollingWrapper(socket_t listener_socket) : listener_socket(listener_socket) {}
 
     PollingWrapper(std::vector<socket_t> _connections, std::vector<pollfd> _pollfds)
-        : connections(std::move(_connections)),
-          pollfds(std::move(_pollfds)) {
+        : connections(std::move(_connections)), pollfds(std::move(_pollfds)) {
         listener_socket = connections.back();
         connections.pop_back();
     }
@@ -102,7 +101,7 @@ struct PollingWrapper {
         pollfds.push_back(pollfd);
     }
 
-    void add_connection(const std::vector<socket_t>& sockets) {
+    void add_connection(const std::vector<socket_t> &sockets) {
         for (auto socket : sockets) {
             add_connection(socket);
         }

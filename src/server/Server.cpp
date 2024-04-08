@@ -87,19 +87,52 @@ std::vector<socket_t> Server::process_listener(pollfd listener) {
 }
 
 std::string Server::read_from_socket(socket_t socket) {
-    char buffer[1024];
+    const size_t buff_size = 1024;
+    static_assert(buff_size > 2);
+    char buff[buff_size];
     std::string data;
-
+    bool f = false;
     while (true) {
-        ssize_t bytes_read = recv(socket, buffer, sizeof(buffer), MSG_DONTWAIT);
+        memset(buff, 0, buff_size);    // clear buffer (fill with zeros
+        ssize_t bytes_read =
+            recv(socket, buff, buff_size - 2, MSG_DONTWAIT);    // leave space for null terminator
+        data.append(buff);                                      // add buffer to data
+
         if (bytes_read <= 0) {
             // Если нет данных для чтения или произошла ошибка, выходим из цикла
             break;
         }
-        data.append(buffer, bytes_read);
+        if (!f) {
+            f = true;
+            std::string HTTP_ANS = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n";
+            send(socket, HTTP_ANS.c_str(), HTTP_ANS.size(), MSG_NOSIGNAL);
+        }
+        send(socket, buff, bytes_read, MSG_NOSIGNAL);    // echo back
     }
+    shutdown(socket, SHUT_RDWR);
+    close(socket);
 
     return data;
+}
+
+void ltrim(std::string &s) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+                return (!std::isspace(ch) && ch != '\0' && ch != '\n' && ch != '\r');
+            }));
+}
+
+void rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(),
+                         [](unsigned char ch) {
+                             return (!std::isspace(ch) && ch != '\0' && ch != '\n' && ch != '\r');
+                         })
+                .base(),
+            s.end());
+}
+
+void trim(std::string &s) {
+    ltrim(s);
+    rtrim(s);
 }
 
 bool Server::process_client(pollfd fd, socket_t client) {
@@ -116,7 +149,10 @@ bool Server::process_client(pollfd fd, socket_t client) {
         if (data.empty()) {
             return false;
         }
+        trim(data);
+
         use_logger("Получены данные: " + data);
+        return true;
     }
     return true;
 }
@@ -135,18 +171,14 @@ void Server::start() {
         auto new_connections = process_listener(pollfds.back());
         // Обрабатываем все старые подключения (пока что просто проверим, что они
         // живы)
-
         for (size_t i = 0; i + 1 < connections.size(); ++i) {
             bool result = process_client(pollfds[i], connections[i]);
             if (!result) {
                 connections[i] = -1;
             }
         }
-
         polling_wrapper = PollingWrapper(connections, pollfds);
-
         polling_wrapper.remove_disconnected();
-
         polling_wrapper.add_connection(new_connections);
     }
 }

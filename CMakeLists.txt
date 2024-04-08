@@ -13,6 +13,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(main main.cpp
         src/server/Server.h
-        src/server/Server.cpp)
+        src/server/Server.cpp
+        src/server/Socket.cpp)
 
 target_link_libraries(main thread-pool graph-bmp-generator)
