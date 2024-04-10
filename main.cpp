@@ -16,7 +16,7 @@ void run_server(Server::Server& serv) {
 }
 
 int main() {
-    Server::ServerParams params(8081, logger, 10, 10, 1024 * 1024);
+    Server::Params params(8081, logger, 10, 10, 1024 * 1024);
     Server::Server server(params);
     try {
         run_server(server);

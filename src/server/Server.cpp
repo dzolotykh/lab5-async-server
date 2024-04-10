@@ -21,7 +21,7 @@ std::string Server::start_message() const {
     return hello.str();
 }
 
-Server::Server(ServerParams _params) : params(std::move(_params)) {}
+Server::Server(Params _params) : params(std::move(_params)) {}
 
 void Server::set_nonblock(socket_t socket) {
     int status = fcntl(socket, F_SETFL, fcntl(socket, F_GETFL, 0) | O_NONBLOCK);

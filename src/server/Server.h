@@ -13,10 +13,10 @@
 #include <unordered_map>
 
 #include "Params.h"
+#include "PollingWrapper.h"
 
 namespace Server {
 using logger_t = std::function<void(const std::string &)>;
-
 using socket_t = int;
 
 class Server {
