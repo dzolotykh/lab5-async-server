@@ -1,0 +1,8 @@
+[requires]
+libpqxx/7.9.0
+libconfig/1.7.3
+[tool_requires]
+cmake/3.22.6
+[generators]
+CMakeDeps
+CMakeToolchain

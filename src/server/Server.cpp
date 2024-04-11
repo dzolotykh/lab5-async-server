@@ -94,35 +94,6 @@ std::vector<socket_t> Server::process_listener(pollfd listener) {
     return result;
 }
 
-std::string Server::read_from_socket(socket_t socket) {
-    const size_t buff_size = 1024;
-    static_assert(buff_size > 2);
-    char buff[buff_size];
-    std::string data;
-    bool f = false;
-    while (true) {
-        memset(buff, 0, buff_size);    // clear buffer (fill with zeros
-        ssize_t bytes_read =
-            recv(socket, buff, buff_size - 2, MSG_DONTWAIT);    // leave space for null terminator
-        data.append(buff);                                      // add buffer to data
-
-        if (bytes_read <= 0) {
-            // Если нет данных для чтения или произошла ошибка, выходим из цикла
-            break;
-        }
-        if (!f) {
-            f = true;
-            std::string HTTP_ANS = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n";
-            send(socket, HTTP_ANS.c_str(), HTTP_ANS.size(), MSG_NOSIGNAL);
-        }
-        send(socket, buff, bytes_read, MSG_NOSIGNAL);    // echo back
-    }
-    shutdown(socket, SHUT_RDWR);
-    close(socket);
-
-    return data;
-}
-
 bool Server::process_client(pollfd fd, socket_t client) {
     use_logger("Обработка клиента: " + std::to_string(client));
     if (fd.revents & POLLERR) {

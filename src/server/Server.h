@@ -51,10 +51,8 @@ class Server {
 
     bool process_client(pollfd fd, socket_t client);
 
-    std::string read_from_socket(socket_t socket);
-
     Params params;
-    socket_t listener_socket{};
+    socket_t listener_socket;
     std::mutex logger_mtx;
     PollingWrapper polling_wrapper;
 
