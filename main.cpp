@@ -1,8 +1,9 @@
+#include <ConnectionPool.h>
+#include <json/json.h>
 #include <chrono>
 #include <ctime>
 #include <iomanip>
 #include <iostream>
-#include <pqxx/pqxx>
 #include "src/server/Server.h"
 
 auto logger = [](const std::string& s) {
@@ -17,7 +18,15 @@ void run_server(Server::Server& serv) {
 }
 
 int main() {
-    Server::Params params(8081, logger, 10, 10, 1024 * 1024);
+    // TODO сделать проверку конфигурации сервера
+    Json::Value config;
+    std::ifstream config_doc("../config.json", std::ifstream::binary);
+    config_doc >> config;
+    Json::Value server_cfg = config["server"];
+
+    Server::Params params(server_cfg["port"].asInt(), logger,
+                          server_cfg["max_connections_in_queue"].asInt(),
+                          server_cfg["working_threads"].asInt());
     Server::Server server(params);
     try {
         run_server(server);

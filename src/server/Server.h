@@ -23,7 +23,7 @@ using socket_t = int;
 
 class Server {
    public:
-    explicit Server(Params params);
+    explicit Server(Params _params);
 
     ~Server();
 

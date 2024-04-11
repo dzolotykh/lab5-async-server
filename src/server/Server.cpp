@@ -16,8 +16,8 @@ std::string Server::start_message() const {
     hello << "⚡️ Порт: " << params.port << "\n";
     hello << "⚡️ Максимальное количество подключений в очереди: " << params.max_connections_in_queue
           << "\n";
-    hello << "⚡️ Максимальное количество одновременно работающих процессов: " << params.max_process
-          << "\n";
+    hello << "⚡️ Максимальное количество одновременно работающих процессов: "
+          << params.working_threads << "\n";
     return hello.str();
 }
 

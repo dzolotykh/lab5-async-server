@@ -6,14 +6,18 @@
 namespace Server {
 using logger_t = std::function<void(const std::string &)>;
 
+/// \brief Структура, хранящая параметры сервера.
+/// \property port Порт, на котором будет запущен сервер.
+/// \property logger Функция для логирования сообщений.
+/// \property max_connections_in_queue Максимальное количество соединений в очереди.
+/// \property working_threads Максимальное количество одновременно обрабатываемых соединений.
 struct Params {
     Params(unsigned int port, logger_t logger, unsigned int max_connections_in_queue,
-           unsigned int max_process, unsigned int buff_size)
+           unsigned int working_threads)
         : port(port),
           logger(std::move(logger)),
           max_connections_in_queue(max_connections_in_queue),
-          max_process(max_process),
-          buff_size(buff_size) {}
+          working_threads(working_threads) {}
 
     Params(const Params &other) = default;
 
@@ -26,8 +30,7 @@ struct Params {
     unsigned int port;
     logger_t logger;
     unsigned int max_connections_in_queue;
-    unsigned int max_process;
-    unsigned int buff_size;
+    unsigned int working_threads;
 };
 }    // namespace Server
 
