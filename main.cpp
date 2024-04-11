@@ -2,8 +2,8 @@
 #include <ctime>
 #include <iomanip>
 #include <iostream>
-#include "src/server/Server.h"
 #include <pqxx/pqxx>
+#include "src/server/Server.h"
 
 auto logger = [](const std::string& s) {
     auto now = std::chrono::system_clock::now();

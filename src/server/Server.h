@@ -3,6 +3,7 @@
 
 #include <iostream>    // for debugging
 
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <poll.h>
@@ -11,8 +12,6 @@
 #include <unistd.h>
 #include <sstream>
 #include <unordered_map>
-#include <arpa/inet.h>
-
 
 #include "Params.h"
 #include "PollingWrapper.h"
@@ -55,7 +54,6 @@ class Server {
     socket_t listener_socket;
     std::mutex logger_mtx;
     PollingWrapper polling_wrapper;
-
 
     /* Тут будем хранить функции-обработчики для каждого клиента. Если работа с клиентом завершена,
      * то обработчик должен вернуть false. */

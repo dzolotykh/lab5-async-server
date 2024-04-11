@@ -8,8 +8,6 @@ struct FileRow {
     std::string filepath;
     int size;
     std::string token;
-
-
 };
 
-#endif //LAB5_FILES_H
+#endif    //LAB5_FILES_H

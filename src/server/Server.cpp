@@ -66,7 +66,7 @@ std::vector<socket_t> Server::process_listener(pollfd listener) {
         throw std::runtime_error(ERROR_POLL_LISTENER + std::to_string(POLLERR));
     }
 
-    for(;;) {
+    for (;;) {
         sockaddr_in peer{};
         socklen_t peer_size = sizeof(peer);
         socket_t channel = accept(listener_socket, (sockaddr *)&peer, &peer_size);
@@ -82,10 +82,10 @@ std::vector<socket_t> Server::process_listener(pollfd listener) {
         client_status[channel] = true;
 
         // получаем ip-address пользователя
-        auto* pV4Addr = (sockaddr_in*)&channel;
+        auto *pV4Addr = (sockaddr_in *)&channel;
         in_addr ipAddr = pV4Addr->sin_addr;
         char str[INET_ADDRSTRLEN];
-        inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN );
+        inet_ntop(AF_INET, &ipAddr, str, INET_ADDRSTRLEN);
 
         set_nonblock(channel);
         result.push_back({channel});

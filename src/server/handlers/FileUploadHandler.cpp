@@ -26,7 +26,7 @@ bool Server::FileUploadHandler::read_file_size() {
         throw std::runtime_error("Ошибка при чтении размера файла");
     } else if (read == 0) {
         state = State::FINISHED;
-        return false; // клиент отключился
+        return false;    // клиент отключился
     }
     bytes_read += read;
     std::cout << "Прочитано " << read << " байт" << std::endl;
@@ -57,7 +57,8 @@ bool Server::FileUploadHandler::read_file_content() {
     std::ofstream file(filepath, std::ios::app | std::ios::binary);
     if (!file.is_open()) {
         state = State::ERROR;
-        throw std::runtime_error("Не удалось открыть файл для записи. Имя файла: " + filepath.string());
+        throw std::runtime_error("Не удалось открыть файл для записи. Имя файла: " +
+                                 filepath.string());
     }
 
     if (begin_not_written) {
@@ -78,7 +79,7 @@ bool Server::FileUploadHandler::read_file_content() {
         throw std::runtime_error("Ошибка при чтении содержимого файла");
     } else if (read == 0) {
         state = State::ERROR;
-        return false; // клиент отключился
+        return false;    // клиент отключился
     }
     bytes_read += read;
     std::cout << "Прочитано " << read << " байт" << std::endl;
