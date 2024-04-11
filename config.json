@@ -12,5 +12,9 @@
     "port": 8080,
     "max_connections_in_queue": 10,
     "working_threads": 100
+  },
+  "file-uploader": {
+    "upload_dir": "uploads",
+    "max_file_size": 10240
   }
 }

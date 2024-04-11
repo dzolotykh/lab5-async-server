@@ -17,6 +17,7 @@ def small_file():
     serversocket.send(size)
     serversocket.send(encoded_string)
     answer = serversocket.recv(1024).decode()
+    print(answer)
     status, response = answer.split('@')
     if status != 'OK':
         print('❌ Test failed [', test_name, ']. Server returned error: ', response)
@@ -38,7 +39,6 @@ def huge_file():
     serversocket.connect(('127.0.0.1',8080))
     s = "gm96qhkfyaltabk8csf03iz0r0t3cwhgbf6hmy6pohg04t5bqvzds096e75k3wk81c0uvabzk4njd63e4y5ywyfb7e1thw8erjctomxq9xkrr0f376ebays0z63e3ysxidd9h3rkc19qeej354znlqexumu9c3errpelcvovq3c9yad6cih5gq9rews7jczuugopue1z"
     s = s * 20000
-    print(len(s))
     size = struct.pack('I', len(s))
     encoded_string = s.encode()
     serversocket.send("u".encode())

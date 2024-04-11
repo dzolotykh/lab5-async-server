@@ -138,6 +138,7 @@ void Server::start() {
                 if (state == AbstractHandler::Result::ERROR) {
                     use_logger("Ошибка при обработке клиента. Пользователь отключен.");
                 } else {
+                    // TODO возможно возвратом кода ответа занимается сам обработчик в get_response
                     std::string ans = "OK@" + client_handlers[connections[i]]->get_response();
                     send(connections[i], ans.c_str(), ans.size(), MSG_NOSIGNAL);
                 }

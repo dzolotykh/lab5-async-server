@@ -43,6 +43,7 @@ int main() {
 
     Json::Value server_cfg = config["server"];
     Json::Value database_cfg = config["database"];
+    Json::Value file_uploader_cfg = config["file-uploader"];
 
     std::string db_host = get_env_var(database_cfg["host"].asString());
     std::string db_port = get_env_var(database_cfg["port"].asString());
