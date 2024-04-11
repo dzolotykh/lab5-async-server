@@ -3,6 +3,7 @@
 
 #include <poll.h>
 #include <vector>
+#include "typenames.h"
 
 namespace Server {
 /*
@@ -13,7 +14,6 @@ namespace Server {
  * возвращать массив сокетов для поллинга. Последний элемент массива это сокет-слушатель
  * отдельно хранится главный сокет-слушатель, который не должен быть удален
 */
-using socket_t = int;
 
 class PollingWrapper {
    private:

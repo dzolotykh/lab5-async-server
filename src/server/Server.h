@@ -16,11 +16,9 @@
 #include "Params.h"
 #include "PollingWrapper.h"
 #include "handlers/FileUploadHandler.h"
+#include "typenames.h"
 
 namespace Server {
-using logger_t = std::function<void(const std::string &)>;
-using socket_t = int;
-
 class Server {
    public:
     explicit Server(Params _params);
@@ -36,6 +34,8 @@ class Server {
     Server &operator=(Server &&) = delete;
 
     void start();
+
+    void add_endpoint(char name, handler_provider_t handler_provider);
 
    private:
     [[nodiscard]] std::string start_message() const;
@@ -59,6 +59,8 @@ class Server {
      * то обработчик должен вернуть false. */
     std::unordered_map<socket_t, std::unique_ptr<AbstractHandler>> client_handlers;
     std::unordered_map<socket_t, bool> client_status;
+
+    std::unordered_map<char, handler_provider_t> endpoints;
 };
 }    // namespace Server
 

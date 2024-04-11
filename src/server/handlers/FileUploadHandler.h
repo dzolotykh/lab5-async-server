@@ -1,10 +1,12 @@
 #ifndef LAB5_FILEUPLOADHANDLER_H
 #define LAB5_FILEUPLOADHANDLER_H
 
+#include <ConnectionPool.h>
 #include <sys/socket.h>
 #include <filesystem>
 #include <fstream>
 #include <random>
+#include "../typenames.h"
 #include "AbstractHandler.h"
 
 // TODO сделать ограничение на размер файла
@@ -15,9 +17,8 @@
 // 3 сообщение от сервера: результат загрузки файла
 
 namespace Server {
-using socket_t = int;
 
-/* Обработчик для загрузки файла от клиента и сохранения его на диск */
+/// \brief Обработчик загрузки файла на сервер.
 class FileUploadHandler : public AbstractHandler {
    private:
     const int buffer_size = 1024;
@@ -25,6 +26,7 @@ class FileUploadHandler : public AbstractHandler {
 
     socket_t client;
     size_t file_size;
+    Database::ConnectionPool& pool;
     std::filesystem::path filepath;
     std::random_device rd;
     std::mt19937 gen;
@@ -44,7 +46,7 @@ class FileUploadHandler : public AbstractHandler {
     bool read_file_content();
 
    public:
-    explicit FileUploadHandler(socket_t client);
+    FileUploadHandler(socket_t client, Database::ConnectionPool& _pool);
     bool operator()() override;
     std::string get_response() override;
     Result get_result() override;

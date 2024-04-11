@@ -2,6 +2,7 @@
 #include <sys/poll.h>
 #include <stdexcept>
 #include <utility>
+#include "handlers/EndpointHandler.h"
 #include "log.h"
 
 namespace Server {
@@ -78,7 +79,11 @@ std::vector<socket_t> Server::process_listener(pollfd listener) {
             }
         }
 
-        client_handlers[channel] = std::unique_ptr<AbstractHandler>(new FileUploadHandler(channel));
+        changer_t changer = [this, channel](std::unique_ptr<AbstractHandler> handler) {
+            client_handlers[channel] = std::move(handler);
+        };
+
+        client_handlers[channel] = std::make_unique<EndpointHandler>(endpoints, channel, changer);
         client_status[channel] = true;
 
         // получаем ip-address пользователя
@@ -125,11 +130,10 @@ void Server::start() {
         poll(pollfds.data(), pollfds.size(), 1000);
         // Проверяем, есть ли новые подключения
         auto new_connections = process_listener(pollfds.back());
-        // Обрабатываем все старые подключения (пока что просто проверим, что они
-        // живы)
+        // Обрабатываем все старые подключения
         for (size_t i = 0; i + 1 < connections.size(); ++i) {
-            bool result = process_client(pollfds[i], connections[i]);
-            if (!result) {
+            bool need_continue = process_client(pollfds[i], connections[i]);
+            if (!need_continue) {
                 auto state = client_handlers[connections[i]]->get_result();
                 if (state == AbstractHandler::Result::ERROR) {
                     use_logger("Ошибка при обработке клиента. Пользователь отключен.");
@@ -149,6 +153,16 @@ void Server::start() {
 
         polling_wrapper.add_connection(new_connections);
     }
+}
+
+/// \brief Добавляет обработчик для конечной точки.
+/// \param name Имя конечной точки.
+/// \param handler Функция, возвращающая обработчик для данной конечной точки.
+/// На вход в эту функцию будет подаваться сокет клиента. Ожидается, что внутри она будет
+/// создавать объект обработчика с необходимыми параметрами и возвращать его.
+/// \note В случае, если обработчик с таким именем уже существует, он будет заменен.
+void Server::add_endpoint(char name, handler_provider_t handler) {
+    endpoints[name] = std::move(handler);
 }
 
 Server::~Server() = default;

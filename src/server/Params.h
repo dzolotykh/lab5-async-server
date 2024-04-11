@@ -2,9 +2,9 @@
 #define LAB5_PARAMS_H
 
 #include <functional>
+#include "typenames.h"
 
 namespace Server {
-using logger_t = std::function<void(const std::string &)>;
 
 /// \brief Структура, хранящая параметры сервера.
 /// \property port Порт, на котором будет запущен сервер.

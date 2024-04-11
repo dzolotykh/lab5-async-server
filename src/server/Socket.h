@@ -1,11 +1,12 @@
 #ifndef LAB5_SOCKET_H
 #define LAB5_SOCKET_H
 
+#include "typenames.h"
+
 namespace Server {
 
 // RAII-обертка для сокета
 class Socket {
-    using socket_t = int;
     socket_t socket;
 
    public:

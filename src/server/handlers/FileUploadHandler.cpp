@@ -8,7 +8,8 @@ void Server::FileUploadHandler::generate_filename() {
 
 #include <iostream>
 
-Server::FileUploadHandler::FileUploadHandler(Server::socket_t client) : client(client), gen(rd()) {
+Server::FileUploadHandler::FileUploadHandler(socket_t client, Database::ConnectionPool& _pool)
+    : client(client), gen(rd()), pool(_pool), file_size(0) {
     generate_filename();
     std::cout << "Создан обработчик для загрузки файла. Имя файла: " << filepath << std::endl;
 }
@@ -66,6 +67,17 @@ bool Server::FileUploadHandler::read_file_content() {
         begin_not_written = false;
         if (bytes_read == file_size) {
             std::cout << "Файл загружен" << std::endl;
+
+            // TODO вынести в отдельную функцию и добавить генерацию токена
+            auto conn = pool.get_connection();
+            pqxx::work w(*conn);
+            std::cout << "INSERT INTO files (filepath, size, token) VALUES ('" +
+                         filepath.filename().string() + "', " + std::to_string(file_size) + ", 'token')" << std::endl;
+            w.exec("INSERT INTO files (filepath, size, token) VALUES ('" +
+                   filepath.filename().string() + "', " + std::to_string(file_size) + ", 'token')");
+            w.commit();
+            pool.return_connection(conn);
+
             state = State::FINISHED;
             return false;
         }
@@ -93,6 +105,17 @@ bool Server::FileUploadHandler::read_file_content() {
     file.write(buffer.data(), read);
     if (bytes_not_read == 0) {
         std::cout << "Файл загружен" << std::endl;
+
+        // TODO вынести в отдельную функцию и добавить генерацию токена
+        auto conn = pool.get_connection();
+        pqxx::work w(*conn);
+        std::cout << "INSERT INTO files (filepath, size, token) VALUES ('" +
+                     filepath.filename().string() + "', " + std::to_string(file_size) + ", 'token')" << std::endl;
+        w.exec("INSERT INTO files (filepath, size, token) VALUES ('" +
+               filepath.filename().string() + "', " + std::to_string(file_size) + ", 'token')");
+        w.commit();
+        pool.return_connection(conn);
+
         state = State::FINISHED;
         return false;
     }

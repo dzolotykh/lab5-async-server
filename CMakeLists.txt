@@ -25,6 +25,9 @@ add_executable(main main.cpp
         src/server/PollingWrapper.cpp
         src/server/handlers/FileUploadHandler.cpp
         src/database/ConnectionPool.cpp
+        src/server/handlers/EndpointHandler.h
+        src/server/handlers/EndpointHandler.cpp
+        src/server/typenames.h
 )
 
 target_link_libraries(main thread-pool graph-bmp-generator libpqxx::pqxx JsonCpp::JsonCpp)

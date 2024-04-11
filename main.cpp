@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <iostream>
 #include "src/server/Server.h"
+#include "src/server/typenames.h"
 
 auto logger = [](const std::string& s) {
     auto now = std::chrono::system_clock::now();
@@ -13,7 +14,19 @@ auto logger = [](const std::string& s) {
     std::cout << s << std::endl;
 };
 
-void run_server(Server::Server& serv) {
+/// \brief Немного о том, каким должен быть обработчик
+/// Обработчик должен быть наследником AbstractHandler.
+/// При этом, конструктор у него может быть любым. Главное, чтобы он корректно переопределил
+/// оператор круглых скобок. Проблема в том, что у нас на каждого клиента создается свой экземпляр
+/// класса-обработчика. Значит, ответственность за создание этого класса надо возложить на человека,
+/// который задает эндпоинт со своим кастомным обработчиком. Получается, в add_endpoint
+/// надо передать символ эндпоинта и функцию, которая будет порождать нам обработчик.
+
+void run_server(Server::Server& serv, Database::ConnectionPool& pool) {
+    serv.add_endpoint('u', [&pool](Server::socket_t client) {
+        return std::make_unique<Server::FileUploadHandler>(client, pool);
+    });
+
     serv.start();
 }
 
@@ -46,7 +59,7 @@ int main() {
                           server_cfg["working_threads"].asInt());
     Server::Server server(params);
     try {
-        run_server(server);
+        run_server(server, pool);
     } catch (const std::runtime_error& err) {
         logger("Ошибка: " + std::string(err.what()));
         return 0;
