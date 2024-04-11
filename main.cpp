@@ -21,7 +21,7 @@ int main() {
     try {
         run_server(server);
     } catch (const std::runtime_error& err) {
-        logger(err.what());
+        logger("Ошибка: " + std::string(err.what()));
         return 0;
     }
 }

@@ -31,8 +31,6 @@ void Server::set_nonblock(socket_t socket) {
 }
 
 void Server::prepare_listener_socket() {
-    set_nonblock(listener_socket);
-
     sockaddr_in socket_address{};
     socket_address.sin_family = AF_INET;
     socket_address.sin_port = htons(params.port);
@@ -49,6 +47,7 @@ void Server::prepare_listener_socket() {
     if (bind_status < 0) {
         throw std::runtime_error(ERROR_BIND + std::to_string(errno));
     }
+    set_nonblock(listener_socket);
     if (listen(listener_socket, params.max_connections_in_queue) < 0) {
         throw std::runtime_error(ERROR_LISTEN + std::to_string(errno));
     }
@@ -67,8 +66,7 @@ std::vector<socket_t> Server::process_listener(pollfd listener) {
         throw std::runtime_error(ERROR_POLL_LISTENER + std::to_string(POLLERR));
     }
 
-    // эту часть надо переписать: в revents хранится не количество событий, а их битовая маска
-    for (int i = 0; i < listener.revents; ++i) {
+    for(;;) {
         sockaddr_in peer{};
         socklen_t peer_size = sizeof(peer);
         socket_t channel = accept(listener_socket, (sockaddr *)&peer, &peer_size);
@@ -79,9 +77,19 @@ std::vector<socket_t> Server::process_listener(pollfd listener) {
                 throw std::runtime_error(ERROR_ACCEPT + std::to_string(errno));
             }
         }
+
+        client_handlers[channel] = std::unique_ptr<AbstractHandler>(new FileUploadHandler(channel));
+        client_status[channel] = true;
+
+        // получаем ip-address пользователя
+        auto* pV4Addr = (sockaddr_in*)&channel;
+        in_addr ipAddr = pV4Addr->sin_addr;
+        char str[INET_ADDRSTRLEN];
+        inet_ntop( AF_INET, &ipAddr, str, INET_ADDRSTRLEN );
+
         set_nonblock(channel);
         result.push_back({channel});
-        use_logger("Создано подключение для нового клиента.");
+        use_logger("Создано подключение для нового клиента. IP: " + std::string(str));
     }
     return result;
 }
@@ -115,44 +123,21 @@ std::string Server::read_from_socket(socket_t socket) {
     return data;
 }
 
-void ltrim(std::string &s) {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-                return (!std::isspace(ch) && ch != '\0' && ch != '\n' && ch != '\r');
-            }));
-}
-
-void rtrim(std::string &s) {
-    s.erase(std::find_if(s.rbegin(), s.rend(),
-                         [](unsigned char ch) {
-                             return (!std::isspace(ch) && ch != '\0' && ch != '\n' && ch != '\r');
-                         })
-                .base(),
-            s.end());
-}
-
-void trim(std::string &s) {
-    ltrim(s);
-    rtrim(s);
-}
-
 bool Server::process_client(pollfd fd, socket_t client) {
+    use_logger("Обработка клиента: " + std::to_string(client));
     if (fd.revents & POLLERR) {
+        use_logger("Ошибка в сокете клиента. Пользователь отключен.");
         return false;
     }
-    if (fd.revents & POLLHUP) {
-        use_logger("Пользователь отключился.");
-        close(client);
+    client_handlers[client]->operator()();
+    auto result = client_handlers[client]->get_result();
+    if (result == AbstractHandler::Result::ERROR) {
+        use_logger("Ошибка при обработке клиента. Пользователь должен быть отключен.");
         return false;
     }
-    if (fd.revents & POLLIN) {
-        std::string data = read_from_socket(client);
-        if (data.empty()) {
-            return false;
-        }
-        trim(data);
-
-        use_logger("Получены данные: " + data);
-        return true;
+    if (result == AbstractHandler::Result::OK) {
+        use_logger("Клиент успешно обработан.");
+        return false;
     }
     return true;
 }
@@ -174,14 +159,26 @@ void Server::start() {
         for (size_t i = 0; i + 1 < connections.size(); ++i) {
             bool result = process_client(pollfds[i], connections[i]);
             if (!result) {
+                auto state = client_handlers[connections[i]]->get_result();
+                if (state == AbstractHandler::Result::ERROR) {
+                    use_logger("Ошибка при обработке клиента. Пользователь отключен.");
+                } else {
+                    std::string ans = "OK@" + client_handlers[connections[i]]->get_response();
+                    send(connections[i], ans.c_str(), ans.size(), MSG_NOSIGNAL);
+                }
+                shutdown(connections[i], SHUT_RDWR);
+                close(connections[i]);
+                client_handlers.erase(connections[i]);
+                use_logger("Клиент отключен: " + std::to_string(connections[i]));
                 connections[i] = -1;
             }
         }
         polling_wrapper = PollingWrapper(connections, pollfds);
         polling_wrapper.remove_disconnected();
+
         polling_wrapper.add_connection(new_connections);
     }
 }
 
-Server::~Server() {}
+Server::~Server() = default;
 }    // namespace Server

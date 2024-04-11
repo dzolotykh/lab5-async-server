@@ -11,9 +11,12 @@
 #include <unistd.h>
 #include <sstream>
 #include <unordered_map>
+#include <arpa/inet.h>
+
 
 #include "Params.h"
 #include "PollingWrapper.h"
+#include "handlers/FileUploadHandler.h"
 
 namespace Server {
 using logger_t = std::function<void(const std::string &)>;
@@ -54,6 +57,12 @@ class Server {
     socket_t listener_socket{};
     std::mutex logger_mtx;
     PollingWrapper polling_wrapper;
+
+
+    /* Тут будем хранить функции-обработчики для каждого клиента. Если работа с клиентом завершена,
+     * то обработчик должен вернуть false. */
+    std::unordered_map<socket_t, std::unique_ptr<AbstractHandler>> client_handlers;
+    std::unordered_map<socket_t, bool> client_status;
 };
 }    // namespace Server
 
