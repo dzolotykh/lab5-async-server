@@ -17,12 +17,29 @@ void run_server(Server::Server& serv) {
     serv.start();
 }
 
+std::string get_env_var(const std::string& key) {
+    char* val = std::getenv(key.c_str());
+    return val == nullptr ? std::string("") : std::string(val);
+}
+
 int main() {
     // TODO сделать проверку конфигурации сервера
     Json::Value config;
     std::ifstream config_doc("../config.json", std::ifstream::binary);
     config_doc >> config;
+
     Json::Value server_cfg = config["server"];
+    Json::Value database_cfg = config["database"];
+
+    std::string db_host = get_env_var(database_cfg["host"].asString());
+    std::string db_port = get_env_var(database_cfg["port"].asString());
+    std::string db_user = get_env_var(database_cfg["user"].asString());
+    std::string db_password = get_env_var(database_cfg["password"].asString());
+    std::string db_name = get_env_var(database_cfg["name"].asString());
+
+    Database::ConnectionPool pool(database_cfg["num_connections"].asInt(),
+                                  "host=" + db_host + " port=" + db_port + " user=" + db_user +
+                                      " password=" + db_password + " dbname=" + db_name);
 
     Server::Params params(server_cfg["port"].asInt(), logger,
                           server_cfg["max_connections_in_queue"].asInt(),

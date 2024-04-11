@@ -1,9 +1,12 @@
 {
   "database":{
-    "host": "host",
-    "port": "port",
-    "user": "user",
-    "password": "password"
+    "host": "DB_HOST",
+    "name": "DB_NAME",
+    "port": "DB_PORT",
+    "user": "DB_USER",
+    "password": "DB_PASSWORD",
+
+    "num_connections": 10
   },
   "server": {
     "port": 8080,
