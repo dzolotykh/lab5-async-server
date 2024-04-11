@@ -17,8 +17,27 @@ std::unique_ptr<pqxx::connection> Database::ConnectionPool::get_connection() {
     return connection;
 }
 
-void Database::ConnectionPool::return_connection(std::unique_ptr<pqxx::connection>& connection) {
+void Database::ConnectionPool::return_connection(std::unique_ptr<pqxx::connection> &connection) {
     std::lock_guard<std::mutex> lock(connections_mtx);
     connections.push(std::move(connection));
     connections_cv.notify_one();
+}
+
+Database::ConnectionPool::ConnectionPool(Database::ConnectionPool &&other) noexcept
+    : num_connections(other.num_connections),
+      connection_string(std::move(other.connection_string)),
+      connections(std::move(other.connections)) {
+    other.num_connections = 0;
+}
+
+Database::ConnectionPool &Database::ConnectionPool::operator=(
+    Database::ConnectionPool &&other) noexcept {
+    if (this == &other) {
+        return *this;
+    }
+    num_connections = other.num_connections;
+    connection_string = std::move(other.connection_string);
+    connections = std::move(other.connections);
+    other.num_connections = 0;
+    return *this;
 }

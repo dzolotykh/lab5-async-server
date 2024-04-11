@@ -26,7 +26,12 @@ class ConnectionPool {
     /// \brief Вернуть соединение в пул.
     /// \param connection Указатель на объект соединения с БД.
     /// \details После возврата соединения в пул, оно становится доступным для других потоков.
-    void return_connection(std::unique_ptr<pqxx::connection>& connection);
+    void return_connection(std::unique_ptr<pqxx::connection> &connection);
+
+    ConnectionPool(const ConnectionPool &other) = delete;
+    ConnectionPool &operator=(const ConnectionPool &other) = delete;
+    ConnectionPool(ConnectionPool &&other) noexcept;
+    ConnectionPool &operator=(ConnectionPool &&other) noexcept;
 
    private:
     size_t num_connections;
