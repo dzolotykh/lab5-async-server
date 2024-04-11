@@ -1,0 +1,20 @@
+{
+  "database":{
+    "host": "DB_HOST",
+    "name": "DB_NAME",
+    "port": "DB_PORT",
+    "user": "DB_USER",
+    "password": "DB_PASSWORD",
+
+    "num_connections": 10
+  },
+  "server": {
+    "port": 8080,
+    "max_connections_in_queue": 10,
+    "working_threads": 100
+  },
+  "file-uploader": {
+    "upload_dir": "uploads",
+    "max_file_size": 10240
+  }
+}

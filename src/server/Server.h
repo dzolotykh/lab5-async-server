@@ -3,6 +3,7 @@
 
 #include <iostream>    // for debugging
 
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <poll.h>
@@ -14,14 +15,13 @@
 
 #include "Params.h"
 #include "PollingWrapper.h"
+#include "handlers/FileUploadHandler.h"
+#include "typenames.h"
 
 namespace Server {
-using logger_t = std::function<void(const std::string &)>;
-using socket_t = int;
-
 class Server {
    public:
-    explicit Server(Params params);
+    explicit Server(Params _params);
 
     ~Server();
 
@@ -34,6 +34,8 @@ class Server {
     Server &operator=(Server &&) = delete;
 
     void start();
+
+    void add_endpoint(char name, handler_provider_t handler_provider);
 
    private:
     [[nodiscard]] std::string start_message() const;
@@ -48,12 +50,17 @@ class Server {
 
     bool process_client(pollfd fd, socket_t client);
 
-    std::string read_from_socket(socket_t socket);
-
     Params params;
-    socket_t listener_socket{};
+    socket_t listener_socket;
     std::mutex logger_mtx;
     PollingWrapper polling_wrapper;
+
+    /* Тут будем хранить функции-обработчики для каждого клиента. Если работа с клиентом завершена,
+     * то обработчик должен вернуть false. */
+    std::unordered_map<socket_t, std::unique_ptr<AbstractHandler>> client_handlers;
+    std::unordered_map<socket_t, bool> client_status;
+
+    std::unordered_map<char, handler_provider_t> endpoints;
 };
 }    // namespace Server
 

@@ -1,3 +1,5 @@
-cmake-build-debug
+cmake
 dev
 .idea
+build
+CMakeUserPresets.json

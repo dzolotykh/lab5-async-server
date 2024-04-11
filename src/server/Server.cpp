@@ -2,6 +2,7 @@
 #include <sys/poll.h>
 #include <stdexcept>
 #include <utility>
+#include "handlers/EndpointHandler.h"
 #include "log.h"
 
 namespace Server {
@@ -16,8 +17,8 @@ std::string Server::start_message() const {
     hello << "⚡️ Порт: " << params.port << "\n";
     hello << "⚡️ Максимальное количество подключений в очереди: " << params.max_connections_in_queue
           << "\n";
-    hello << "⚡️ Максимальное количество одновременно работающих процессов: " << params.max_process
-          << "\n";
+    hello << "⚡️ Максимальное количество одновременно работающих процессов: "
+          << params.working_threads << "\n";
     return hello.str();
 }
 
@@ -31,8 +32,6 @@ void Server::set_nonblock(socket_t socket) {
 }
 
 void Server::prepare_listener_socket() {
-    set_nonblock(listener_socket);
-
     sockaddr_in socket_address{};
     socket_address.sin_family = AF_INET;
     socket_address.sin_port = htons(params.port);
@@ -49,6 +48,7 @@ void Server::prepare_listener_socket() {
     if (bind_status < 0) {
         throw std::runtime_error(ERROR_BIND + std::to_string(errno));
     }
+    set_nonblock(listener_socket);
     if (listen(listener_socket, params.max_connections_in_queue) < 0) {
         throw std::runtime_error(ERROR_LISTEN + std::to_string(errno));
     }
@@ -67,8 +67,7 @@ std::vector<socket_t> Server::process_listener(pollfd listener) {
         throw std::runtime_error(ERROR_POLL_LISTENER + std::to_string(POLLERR));
     }
 
-    // эту часть надо переписать: в revents хранится не количество событий, а их битовая маска
-    for (int i = 0; i < listener.revents; ++i) {
+    for (;;) {
         sockaddr_in peer{};
         socklen_t peer_size = sizeof(peer);
         socket_t channel = accept(listener_socket, (sockaddr *)&peer, &peer_size);
@@ -79,80 +78,42 @@ std::vector<socket_t> Server::process_listener(pollfd listener) {
                 throw std::runtime_error(ERROR_ACCEPT + std::to_string(errno));
             }
         }
+
+        changer_t changer = [this, channel](std::unique_ptr<AbstractHandler> handler) {
+            client_handlers[channel] = std::move(handler);
+        };
+
+        client_handlers[channel] = std::make_unique<EndpointHandler>(endpoints, channel, changer);
+        client_status[channel] = true;
+
+        // получаем ip-address пользователя
+        auto *pV4Addr = (sockaddr_in *)&channel;
+        in_addr ipAddr = pV4Addr->sin_addr;
+        char str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &ipAddr, str, INET_ADDRSTRLEN);
+
         set_nonblock(channel);
         result.push_back({channel});
-        use_logger("Создано подключение для нового клиента.");
+        use_logger("Создано подключение для нового клиента. IP: " + std::string(str));
     }
     return result;
 }
 
-std::string Server::read_from_socket(socket_t socket) {
-    const size_t buff_size = 1024;
-    static_assert(buff_size > 2);
-    char buff[buff_size];
-    std::string data;
-    bool f = false;
-    while (true) {
-        memset(buff, 0, buff_size);    // clear buffer (fill with zeros
-        ssize_t bytes_read =
-            recv(socket, buff, buff_size - 2, MSG_DONTWAIT);    // leave space for null terminator
-        data.append(buff);                                      // add buffer to data
-
-        if (bytes_read <= 0) {
-            // Если нет данных для чтения или произошла ошибка, выходим из цикла
-            break;
-        }
-        if (!f) {
-            f = true;
-            std::string HTTP_ANS = "HTTP/1.1 200 OK\nContent-Type: text/html\n\n";
-            send(socket, HTTP_ANS.c_str(), HTTP_ANS.size(), MSG_NOSIGNAL);
-        }
-        send(socket, buff, bytes_read, MSG_NOSIGNAL);    // echo back
-    }
-    shutdown(socket, SHUT_RDWR);
-    close(socket);
-
-    return data;
-}
-
-void ltrim(std::string &s) {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-                return (!std::isspace(ch) && ch != '\0' && ch != '\n' && ch != '\r');
-            }));
-}
-
-void rtrim(std::string &s) {
-    s.erase(std::find_if(s.rbegin(), s.rend(),
-                         [](unsigned char ch) {
-                             return (!std::isspace(ch) && ch != '\0' && ch != '\n' && ch != '\r');
-                         })
-                .base(),
-            s.end());
-}
-
-void trim(std::string &s) {
-    ltrim(s);
-    rtrim(s);
-}
-
 bool Server::process_client(pollfd fd, socket_t client) {
+    use_logger("Обработка клиента: " + std::to_string(client));
     if (fd.revents & POLLERR) {
+        use_logger("Ошибка в сокете клиента. Пользователь отключен.");
         return false;
     }
-    if (fd.revents & POLLHUP) {
-        use_logger("Пользователь отключился.");
-        close(client);
+    client_handlers[client]->operator()();
+    auto result = client_handlers[client]->get_result();
+    if (result == AbstractHandler::Result::ERROR) {
+        use_logger("Ошибка при обработке клиента. Пользователь должен быть отключен.");
         return false;
     }
-    if (fd.revents & POLLIN) {
-        std::string data = read_from_socket(client);
-        if (data.empty()) {
-            return false;
-        }
-        trim(data);
-
-        use_logger("Получены данные: " + data);
-        return true;
+    if (result == AbstractHandler::Result::OK) {
+        use_logger("Клиент успешно обработан.");
+        return false;
     }
     return true;
 }
@@ -169,19 +130,41 @@ void Server::start() {
         poll(pollfds.data(), pollfds.size(), 1000);
         // Проверяем, есть ли новые подключения
         auto new_connections = process_listener(pollfds.back());
-        // Обрабатываем все старые подключения (пока что просто проверим, что они
-        // живы)
+        // Обрабатываем все старые подключения
         for (size_t i = 0; i + 1 < connections.size(); ++i) {
-            bool result = process_client(pollfds[i], connections[i]);
-            if (!result) {
+            bool need_continue = process_client(pollfds[i], connections[i]);
+            if (!need_continue) {
+                auto state = client_handlers[connections[i]]->get_result();
+                if (state == AbstractHandler::Result::ERROR) {
+                    use_logger("Ошибка при обработке клиента. Пользователь отключен.");
+                } else {
+                    // TODO возможно возвратом кода ответа занимается сам обработчик в get_response
+                    std::string ans = "OK@" + client_handlers[connections[i]]->get_response();
+                    send(connections[i], ans.c_str(), ans.size(), MSG_NOSIGNAL);
+                }
+                shutdown(connections[i], SHUT_RDWR);
+                close(connections[i]);
+                client_handlers.erase(connections[i]);
+                use_logger("Клиент отключен: " + std::to_string(connections[i]));
                 connections[i] = -1;
             }
         }
         polling_wrapper = PollingWrapper(connections, pollfds);
         polling_wrapper.remove_disconnected();
+
         polling_wrapper.add_connection(new_connections);
     }
 }
 
-Server::~Server() {}
+/// \brief Добавляет обработчик для конечной точки.
+/// \param name Имя конечной точки.
+/// \param handler Функция, возвращающая обработчик для данной конечной точки.
+/// На вход в эту функцию будет подаваться сокет клиента. Ожидается, что внутри она будет
+/// создавать объект обработчика с необходимыми параметрами и возвращать его.
+/// \note В случае, если обработчик с таким именем уже существует, он будет заменен.
+void Server::add_endpoint(char name, handler_provider_t handler) {
+    endpoints[name] = std::move(handler);
+}
+
+Server::~Server() = default;
 }    // namespace Server
