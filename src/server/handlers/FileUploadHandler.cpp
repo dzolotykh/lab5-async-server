@@ -11,14 +11,16 @@ std::string Server::FileUploadHandler::random_string(size_t length) {
 
 void Server::FileUploadHandler::generate_filename() {
     do {
-        filepath = std::filesystem::temp_directory_path() / random_string(32);
+        filepath = std::filesystem::current_path() / (random_string(32) + ".txt");
     } while (std::filesystem::exists(filepath));
 }
 
 #include <iostream>
 
-Server::FileUploadHandler::FileUploadHandler(socket_t client, Database::ConnectionPool& _pool)
-    : client(client), gen(rd()), pool(_pool), file_size(0) {
+Server::FileUploadHandler::FileUploadHandler(socket_t client, Database::ConnectionPool& _pool,
+                                             const std::filesystem::path& _save_path)
+    : client(client), gen(rd()), pool(_pool), file_size(0), save_path(_save_path) {
+    std::filesystem::current_path(save_path);
     generate_filename();
 }
 
@@ -53,13 +55,12 @@ bool Server::FileUploadHandler::read_file_size() {
     return true;
 }
 
-void Server::FileUploadHandler::save_file_to_db(const std::string& filepath, size_t file_size, const std::string& token) {
+void Server::FileUploadHandler::save_file_to_db(const std::string& token) {
     auto conn = pool.get_connection();
-    pqxx::work w(*conn);
-    w.exec("INSERT INTO files (filepath, size, token) VALUES ('" + filepath + "', " + std::to_string(file_size) +
-           ", '" + token + "')");
+    pqxx::work w(conn.get_connection());
+    w.exec("INSERT INTO files (filepath, size, token) VALUES ('" + filepath.string() + "', " +
+           std::to_string(file_size) + ", '" + token + "')");
     w.commit();
-    pool.return_connection(conn);
 }
 
 bool Server::FileUploadHandler::read_file_content() {
@@ -78,7 +79,7 @@ bool Server::FileUploadHandler::read_file_content() {
         begin_not_written = false;
         if (bytes_read == file_size) {
             token = random_string(32);
-            save_file_to_db(absolute(filepath).string(), file_size, token);
+            save_file_to_db(absolute(filepath).string());
             state = State::FINISHED;
             return false;
         }
@@ -103,7 +104,7 @@ bool Server::FileUploadHandler::read_file_content() {
     file.write(buffer.data(), read);
     if (bytes_not_read == 0) {
         token = random_string(32);
-        save_file_to_db(absolute(filepath).string(), file_size, token);
+        save_file_to_db(absolute(filepath).string());
         state = State::FINISHED;
         return false;
     }

@@ -5,8 +5,9 @@
 #include <iomanip>
 #include <iostream>
 #include "src/server/Server.h"
-#include "src/server/typenames.h"
+#include "src/server/handlers/FileDownloadHandler.h"
 #include "src/server/handlers/ResultRequestHandler.h"
+#include "src/server/typenames.h"
 
 auto logger = [](const std::string& s) {
     auto now = std::chrono::system_clock::now();
@@ -14,6 +15,8 @@ auto logger = [](const std::string& s) {
     std::cout << std::put_time(std::localtime(&raw_time), "[%Y-%m-%d %X] ");
     std::cout << s << std::endl;
 };
+
+Json::Value config;
 
 /// \brief Немного о том, каким должен быть обработчик
 /// Обработчик должен быть наследником AbstractHandler.
@@ -25,11 +28,16 @@ auto logger = [](const std::string& s) {
 
 void run_server(Server::Server& serv, Database::ConnectionPool& pool) {
     serv.add_endpoint('u', [&pool](Server::socket_t client) {
-        return std::make_unique<Server::FileUploadHandler>(client, pool);
+        return std::make_unique<Server::FileUploadHandler>(
+            client, pool, config["file-uploader"]["upload_dir"].asString());
     });
 
     serv.add_endpoint('g', [&pool](Server::socket_t client) {
         return std::make_unique<Server::ResultRequestHandler>(client, pool);
+    });
+
+    serv.add_endpoint('d', [&pool](Server::socket_t client) {
+        return std::make_unique<Server::FileDownloadHandler>(client, pool);
     });
 
     serv.start();
@@ -42,13 +50,14 @@ std::string get_env_var(const std::string& key) {
 
 int main() {
     // TODO сделать проверку конфигурации сервера
-    Json::Value config;
     std::ifstream config_doc("../config.json", std::ifstream::binary);
     config_doc >> config;
 
     Json::Value server_cfg = config["server"];
     Json::Value database_cfg = config["database"];
     Json::Value file_uploader_cfg = config["file-uploader"];
+
+    std::string file_uploader_path = file_uploader_cfg["path"].asString();
 
     std::string db_host = get_env_var(database_cfg["host"].asString());
     std::string db_port = get_env_var(database_cfg["port"].asString());

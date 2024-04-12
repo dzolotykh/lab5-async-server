@@ -6,36 +6,35 @@
 #include <utility>
 
 namespace Server {
-    class HandlerException : public std::exception {
-    public:
-        explicit HandlerException(std::string  message) : message(std::move(message)) {}
-        [[nodiscard]] const char* what() const noexcept override {
-            return message.c_str();
-        }
-    private:
-        std::string message;
-    };
+class HandlerException : public std::exception {
+   public:
+    explicit HandlerException(std::string message) : message(std::move(message)) {}
 
-    class BadInputException : public HandlerException {
-    public:
-        explicit BadInputException(const std::string& message) : HandlerException(message) {}
-    };
+    [[nodiscard]] const char* what() const noexcept override { return message.c_str(); }
 
-    class NotFoundException : public HandlerException {
-    public:
-        explicit NotFoundException(const std::string& message) : HandlerException(message) {}
-    };
-
-class SocketException: public std::exception {
-public:
-    explicit SocketException(std::string  message) : message(std::move(message)) {}
-    [[nodiscard]] const char* what() const noexcept override {
-        return message.c_str();
-    }
-private:
+   private:
     std::string message;
 };
-} // namespace Server
 
+class BadInputException : public HandlerException {
+   public:
+    explicit BadInputException(const std::string& message) : HandlerException(message) {}
+};
 
-#endif //LAB5_EXCEPTIONS_H
+class NotFoundException : public HandlerException {
+   public:
+    explicit NotFoundException(const std::string& message) : HandlerException(message) {}
+};
+
+class SocketException : public std::exception {
+   public:
+    explicit SocketException(std::string message) : message(std::move(message)) {}
+
+    [[nodiscard]] const char* what() const noexcept override { return message.c_str(); }
+
+   private:
+    std::string message;
+};
+}    // namespace Server
+
+#endif    //LAB5_EXCEPTIONS_H

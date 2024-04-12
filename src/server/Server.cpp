@@ -2,9 +2,9 @@
 #include <sys/poll.h>
 #include <stdexcept>
 #include <utility>
+#include "Exceptions.h"
 #include "handlers/EndpointHandler.h"
 #include "log.h"
-#include "Exceptions.h"
 
 namespace Server {
 void Server::use_logger(const std::string &message) {
@@ -126,7 +126,9 @@ bool Server::process_client(pollfd fd, socket_t client) {
         return false;
     }
     auto result = client_handlers[client]->get_result();
-    if (result == AbstractHandler::Result::ERROR) { // TODO вообще, это не должно происходить. Поправлю когда везде будут нормально выбрасываться исключения
+    if (result ==
+        AbstractHandler::Result::
+            ERROR) {    // TODO вообще, это не должно происходить. Поправлю когда везде будут нормально выбрасываться исключения
         use_logger("Ошибка при обработке клиента. Пользователь должен быть отключен.");
         return false;
     }
