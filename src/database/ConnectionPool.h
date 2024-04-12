@@ -32,8 +32,8 @@ class ConnectionPool final {
 
     ConnectionPool(const ConnectionPool& other) = delete;
     ConnectionPool& operator=(const ConnectionPool& other) = delete;
-    ConnectionPool(ConnectionPool&& other) noexcept;
-    ConnectionPool& operator=(ConnectionPool&& other) noexcept;
+    ConnectionPool(ConnectionPool&& other) noexcept = delete;
+    ConnectionPool& operator=(ConnectionPool&& other) noexcept = delete;
 
    private:
     size_t num_connections;

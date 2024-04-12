@@ -26,32 +26,11 @@ void Database::ConnectionPool::return_connection(pqxx::connection connection) {
     connections_cv.notify_one();
 }
 
-Database::ConnectionPool::ConnectionPool(Database::ConnectionPool &&other) noexcept
-    : num_connections(other.num_connections),
-      connection_string(std::move(other.connection_string)),
-      connections(std::move(other.connections)) {
-    other.num_connections = 0;
-}
-
-Database::ConnectionPool &Database::ConnectionPool::operator=(
-    Database::ConnectionPool &&other) noexcept {
-    if (this == &other) {
-        return *this;
-    }
-    num_connections = other.num_connections;
-    connection_string = std::move(other.connection_string);
-    connections = std::move(other.connections);
-    other.num_connections = 0;
-    return *this;
-}
-
-#include <iostream>
-
 Database::Connection::~Connection() {
     parent_pool.return_connection(std::move(owned_connection));
 }
 
-Database::Connection::Connection(pqxx::connection _connection, ConnectionPool& _parent_pool)
+Database::Connection::Connection(pqxx::connection _connection, ConnectionPool &_parent_pool)
     : owned_connection(std::move(_connection)), parent_pool(_parent_pool) {}
 
 pqxx::connection &Database::Connection::get_connection() noexcept {
