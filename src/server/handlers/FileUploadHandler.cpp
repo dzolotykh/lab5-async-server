@@ -28,6 +28,7 @@ bool Server::FileUploadHandler::read_file_size() {
     if (state != State::FILE_SIZE) {
         return false;
     }
+
     ssize_t read = recv(client, buffer.data() + bytes_read, buffer_size - bytes_read, MSG_DONTWAIT);
     if (read == -1 && errno == EAGAIN) {
         return true;
@@ -85,23 +86,27 @@ bool Server::FileUploadHandler::read_file_content() {
         }
     }
 
-    ssize_t read = recv(client, buffer.data(), buffer_size, MSG_DONTWAIT);
-    if (read == -1 && errno == EAGAIN) {
-        return true;
-    } else if (read == -1) {
-        state = State::ERROR;
-        throw std::runtime_error("Ошибка при чтении содержимого файла");
-    } else if (read == 0) {
-        state = State::ERROR;
-        return false;    // клиент отключился
+    size_t read_in_this_iteration = 0;
+    while (read_in_this_iteration < buffer_size && bytes_not_read > 0) {
+        ssize_t read = recv(client, buffer.data(), buffer_size, MSG_DONTWAIT);
+        if (read == -1 && errno == EAGAIN) {
+            return true;
+        } else if (read == -1) {
+            state = State::ERROR;
+            throw std::runtime_error("Ошибка при чтении содержимого файла");
+        } else if (read == 0) {
+            state = State::ERROR;
+            return false;    // клиент отключился
+        }
+        bytes_read += read;
+        if (read > bytes_not_read) {
+            state = State::ERROR;
+            throw std::runtime_error("Прочитано больше байт, чем заявлено в заголовке.");
+        }
+        read_in_this_iteration += read;
+        bytes_not_read -= read;
+        file.write(buffer.data(), read);
     }
-    bytes_read += read;
-    if (read > bytes_not_read) {
-        state = State::ERROR;
-        throw std::runtime_error("Прочитано больше байт, чем заявлено в заголовке.");
-    }
-    bytes_not_read -= read;
-    file.write(buffer.data(), read);
     if (bytes_not_read == 0) {
         token = random_string(32);
         save_file_to_db(absolute(filepath).string());

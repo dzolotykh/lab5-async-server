@@ -28,7 +28,7 @@ class ConnectionPool final {
     /// \brief Вернуть соединение в пул.
     /// \param connection Указатель на объект соединения с БД.
     /// \details После возврата соединения в пул, оно становится доступным для других потоков.
-    void return_connection(pqxx::connection conn);
+    void return_connection(pqxx::connection conn); // TODO подумать над тем, чтобы перенести в private
 
     ConnectionPool(const ConnectionPool& other) = delete;
     ConnectionPool& operator=(const ConnectionPool& other) = delete;

@@ -9,7 +9,7 @@
     "num_connections": 10
   },
   "server": {
-    "port": 8081,
+    "port": 8082,
     "max_connections_in_queue": 10,
     "working_threads": 100
   },

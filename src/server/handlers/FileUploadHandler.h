@@ -21,7 +21,7 @@ namespace Server {
 /// \brief Обработчик загрузки файла на сервер.
 class FileUploadHandler : public AbstractHandler {
    private:
-    const int buffer_size = 1024;
+    const int buffer_size = 1024 * 1024;
     const int header_size = 4;    // хедер состоит просто из размера файла, влезает в int
 
     socket_t client;
