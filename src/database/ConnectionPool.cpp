@@ -26,6 +26,17 @@ void Database::ConnectionPool::return_connection(pqxx::connection connection) {
     connections_cv.notify_one();
 }
 
+#include <iostream>
+
+Database::ConnectionPool::~ConnectionPool() {
+    std::cout << "ConnectionPool destructor" << std::endl;
+    for (size_t i = 0; i < num_connections; ++i) {
+        pqxx::connection c = std::move(connections.front());
+        c.close();
+        connections.pop();
+    }
+}
+
 Database::Connection::~Connection() {
     parent_pool.return_connection(std::move(owned_connection));
 }

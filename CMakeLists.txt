@@ -12,24 +12,23 @@ include_directories(src/libs/graph-bmp-generator)
 add_subdirectory(src/libs/graph-bmp-generator)
 
 include_directories(src/database)
+include_directories(src/server/handlers)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(libpqxx REQUIRED)
 find_package(jsoncpp REQUIRED)
+find_package(GTest REQUIRED)
 
 add_executable(main main.cpp
-        src/server/Server.h
         src/server/Server.cpp
         src/server/Socket.cpp
         src/server/PollingWrapper.cpp
         src/server/handlers/FileUploadHandler.cpp
         src/database/ConnectionPool.cpp
-        src/server/handlers/EndpointHandler.h
         src/server/handlers/EndpointHandler.cpp
-        src/server/typenames.h
         src/server/handlers/ResultRequestHandler.cpp
         src/server/handlers/FileDownloadHandler.cpp
 )
 
-target_link_libraries(main thread-pool graph-bmp-generator libpqxx::pqxx JsonCpp::JsonCpp)
+target_link_libraries(main thread-pool graph-bmp-generator libpqxx::pqxx JsonCpp::JsonCpp GTest::GTest)

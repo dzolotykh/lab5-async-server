@@ -5,8 +5,9 @@
 #include <iomanip>
 #include <iostream>
 #include "src/server/Server.h"
-#include "src/server/handlers/FileDownloadHandler.h"
-#include "src/server/handlers/ResultRequestHandler.h"
+#include <FileUploadHandler.h>
+#include <FileDownloadHandler.h>
+#include <ResultRequestHandler.h>
 #include "src/server/typenames.h"
 
 auto logger = [](const std::string& s) {

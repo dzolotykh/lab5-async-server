@@ -37,6 +37,8 @@ class Server {
 
     void add_endpoint(char name, handler_provider_t handler_provider);
 
+    void stop();
+
    private:
     [[nodiscard]] std::string start_message() const;
 
@@ -54,6 +56,7 @@ class Server {
     socket_t listener_socket;
     std::mutex logger_mtx;
     PollingWrapper polling_wrapper;
+    std::atomic<bool> is_running = true;
 
     /* Тут будем хранить функции-обработчики для каждого клиента. Если работа с клиентом завершена,
      * то обработчик должен вернуть false. */

@@ -146,16 +146,15 @@ void Server::start() {
 
     use_logger(start_message());
 
-    while (true) {
+    while (is_running) {
         auto [connections, pollfds] = polling_wrapper.get();
-        poll(pollfds.data(), pollfds.size(), 1000);
+        poll(pollfds.data(), pollfds.size(), 100);
         // Проверяем, есть ли новые подключения
         auto new_connections = process_listener(pollfds.back());
         // Обрабатываем все старые подключения
         for (size_t i = 0; i + 1 < connections.size(); ++i) {
             bool need_continue = process_client(pollfds[i], connections[i]);
             if (!need_continue) {
-
                 auto state = client_handlers[connections[i]]->get_result();
                 if (state == AbstractHandler::Result::ERROR) {
                     use_logger("Ошибка при обработке клиента. Пользователь отключен.");
@@ -186,6 +185,11 @@ void Server::start() {
 /// \note В случае, если обработчик с таким именем уже существует, он будет заменен.
 void Server::add_endpoint(char name, handler_provider_t handler) {
     endpoints[name] = std::move(handler);
+}
+
+void Server::stop() {
+    close(listener_socket);
+    is_running = false;
 }
 
 Server::~Server() = default;

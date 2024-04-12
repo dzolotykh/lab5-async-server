@@ -19,6 +19,7 @@ class ConnectionPool final {
     /// \param _connection_string Строка для подключения к БД.
     /// \throws pqxx::broken_connection в случае ошибки подключения к БД.
     ConnectionPool(size_t _num_connections, std::string _connection_string);
+    ~ConnectionPool();
 
     /// \brief Получить соединение из пула.
     /// \details Если в пуле нет доступных соединений, поток ожидает появления нового соединения в пуле.
