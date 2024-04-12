@@ -4,6 +4,7 @@
 #include <utility>
 #include "handlers/EndpointHandler.h"
 #include "log.h"
+#include "Exceptions.h"
 
 namespace Server {
 void Server::use_logger(const std::string &message) {
@@ -102,12 +103,30 @@ std::vector<socket_t> Server::process_listener(pollfd listener) {
 bool Server::process_client(pollfd fd, socket_t client) {
     use_logger("Обработка клиента: " + std::to_string(client));
     if (fd.revents & POLLERR) {
-        use_logger("Ошибка в сокете клиента. Пользователь отключен.");
+        use_logger("Ошибка в сокете клиента.");
         return false;
     }
-    client_handlers[client]->operator()();
+    try {
+        client_handlers[client]->operator()();
+    } catch (const BadInputException &e) {
+        use_logger("Клиент предоставил некорректные данные: " + std::string(e.what()));
+        send(client, "ERROR@Invalid data", 19, MSG_NOSIGNAL);
+        return false;
+    } catch (const SocketException &e) {
+        send(client, "ERROR@Not found", 16, MSG_NOSIGNAL);
+        use_logger("Ошибка при работе с сокетом: " + std::string(e.what()));
+        return false;
+    } catch (const NotFoundException &e) {
+        send(client, "ERROR@Not found", 16, MSG_NOSIGNAL);
+        use_logger("Ошибка при поиске данных для клиента: " + std::string(e.what()));
+        return false;
+    } catch (const std::exception &e) {
+        send(client, "ERROR@Internal error", 21, MSG_NOSIGNAL);
+        use_logger("Ошибка при обработке клиента: " + std::string(e.what()));
+        return false;
+    }
     auto result = client_handlers[client]->get_result();
-    if (result == AbstractHandler::Result::ERROR) {
+    if (result == AbstractHandler::Result::ERROR) { // TODO вообще, это не должно происходить. Поправлю когда везде будут нормально выбрасываться исключения
         use_logger("Ошибка при обработке клиента. Пользователь должен быть отключен.");
         return false;
     }
@@ -134,6 +153,7 @@ void Server::start() {
         for (size_t i = 0; i + 1 < connections.size(); ++i) {
             bool need_continue = process_client(pollfds[i], connections[i]);
             if (!need_continue) {
+
                 auto state = client_handlers[connections[i]]->get_result();
                 if (state == AbstractHandler::Result::ERROR) {
                     use_logger("Ошибка при обработке клиента. Пользователь отключен.");
