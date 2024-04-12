@@ -3,3 +3,4 @@ dev
 .idea
 build
 CMakeUserPresets.json
+uploads
