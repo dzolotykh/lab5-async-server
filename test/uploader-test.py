@@ -24,8 +24,10 @@ class TestFileUpload(unittest.TestCase):
         serversocket.send("u".encode())
         serversocket.send(size)
         serversocket.send(encoded_string)
-        answer = serversocket.recv(1024).decode()
-        response = answer.split('@')
+        size = serversocket.recv(4)
+        size = int.from_bytes(size, byteorder='little')
+        answer = serversocket.recv(size).decode()
+        response = answer.split('|')
         status = response[0]
         self.assertEqual(status, 'OK', f'Server returned error: {response}')
         if status == 'OK':
@@ -45,8 +47,10 @@ class TestFileUpload(unittest.TestCase):
         serversocket.send("u".encode())
         serversocket.send(size)
         serversocket.send(encoded_string)
-        answer = serversocket.recv(1024).decode()
-        response = answer.split('@')
+        size = serversocket.recv(4)
+        size = int.from_bytes(size, byteorder='little')
+        answer = serversocket.recv(size).decode()
+        response = answer.split('|')
         status = response[0]
         self.assertEqual(status, 'OK', f'Server returned error: {response}')
         if status == 'OK':
@@ -67,8 +71,10 @@ class TestFileUpload(unittest.TestCase):
         serversocket.send(size)
         serversocket.send(encoded_string)
         serversocket.shutdown(socket.SHUT_WR)
-        answer = serversocket.recv(1024).decode()
-        response = answer.split('@')
+        size = serversocket.recv(4)
+        size = int.from_bytes(size, byteorder='little')
+        answer = serversocket.recv(size).decode()
+        response = answer.split('|')
         status = response[0]
         serversocket.close()
         self.assertEqual(status, 'ERROR', f'Server returned error: {response}')

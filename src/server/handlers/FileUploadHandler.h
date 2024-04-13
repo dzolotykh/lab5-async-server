@@ -46,6 +46,7 @@ class FileUploadHandler : public AbstractHandler {
     void save_file_to_db(const std::string& token);
 
     std::string token;
+    std::string response = "ERROR|Internal server error.";
     std::filesystem::path save_path;
     std::ofstream file;
 

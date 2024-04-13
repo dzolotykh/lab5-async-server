@@ -152,14 +152,18 @@ void Server::start() {
             bool need_continue = process_client(pollfds[i], connections[i]);
             if (!need_continue) {
                 auto state = client_handlers[connections[i]]->get_result();
-                std::string ans = client_handlers[connections[i]]->get_response();
+                std::string response = client_handlers[connections[i]]->get_response();
+                int32_t response_size = response.size();
+                std::string response_size_str(reinterpret_cast<char*>(&response_size), sizeof(response_size));
+                response_size_str += response;
+                response = std::move(response_size_str);
                 if (state == AbstractHandler::Result::ERROR) {
                     use_logger("Ошибка при обработке клиента.");
                     // TODO возможно возвратом кода ответа занимается сам обработчик в get_response
-                    send(connections[i], ans.c_str(), ans.size(), MSG_NOSIGNAL);
+                    send(connections[i], response.c_str(), response.size(), MSG_NOSIGNAL);
                 } else {
                     // TODO возможно возвратом кода ответа занимается сам обработчик в get_response
-                    send(connections[i], ans.c_str(), ans.size(), MSG_NOSIGNAL);
+                    send(connections[i], response.c_str(), response.size(), MSG_NOSIGNAL);
                 }
                 shutdown(connections[i], SHUT_RDWR);
                 close(connections[i]);

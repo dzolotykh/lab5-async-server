@@ -32,6 +32,7 @@ bool Server::FileUploadHandler::read_file_size() {
 
     if (file_size <= 0) {
         state = State::ERROR;
+        response = "ERROR|Bad input. File size must be positive.";
         throw BadInputException("Размер файла не может быть отрицательным или равным нулю.");
     }
 
@@ -48,13 +49,13 @@ void Server::FileUploadHandler::save_file_to_db(const std::string& token) {
 }
 
 bool Server::FileUploadHandler::read_file_content() {
-    std::cout << file_size << std::endl;
     if (state != State::FILE_CONTENT) {
         return false;
     }
     file.open(filepath, std::ios::app | std::ios::binary);
     if (!file.is_open()) {
         state = State::ERROR;
+        response = "ERROR|Internal server error.";
         throw std::runtime_error("Не удалось открыть файл для записи. Имя файла: " +
                                  filepath.string());
     }
@@ -66,11 +67,27 @@ bool Server::FileUploadHandler::read_file_content() {
             [buffer_ptr, this](size_t need_write) { file.write(buffer_ptr, need_write); });
     }
 
-    auto need_continue = reader.value()();
+    bool need_continue = false;
+    try {
+        need_continue = reader.value()();
+    } catch (const SocketException& e) {
+        state = State::ERROR;
+        response = "ERROR|Internal server error.";
+        throw;
+    } catch (const BadInputException &e) {
+        state = State::ERROR;
+        response = "ERROR|Bad input.";
+        throw;
+    } catch (const std::exception& e) {
+        state = State::ERROR;
+        response = "ERROR|Internal server error.";
+        throw;
+    }
     file.close();
     if (!need_continue) {
         save_file_to_db(token);
         state = State::FINISHED;
+        response = "OK|" + token + "|" + filepath.string();
     }
     return need_continue;
 }
@@ -87,7 +104,7 @@ bool Server::FileUploadHandler::operator()() {
 }
 
 std::string Server::FileUploadHandler::get_response() {
-    return token + "@" + absolute(filepath).string();
+    return response;
 }
 
 Server::AbstractHandler::Result Server::FileUploadHandler::get_result() {
