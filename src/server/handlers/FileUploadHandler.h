@@ -8,6 +8,7 @@
 #include <random>
 #include "../typenames.h"
 #include "AbstractHandler.h"
+#include <StringUtils.h>
 
 // TODO сделать ограничение на размер файла
 
@@ -21,15 +22,13 @@ namespace Server {
 /// \brief Обработчик загрузки файла на сервер.
 class FileUploadHandler : public AbstractHandler {
    private:
-    const int buffer_size = 100;
+    const int buffer_size = 1024 * 1024;
     const int header_size = 4;    // хедер состоит просто из размера файла, влезает в int
 
     socket_t client;
     size_t file_size = 0;
     Database::ConnectionPool& pool;
     std::filesystem::path filepath;
-    std::random_device rd;
-    std::mt19937 gen;
     std::vector<char> buffer = std::vector<char>(buffer_size, 0);
     void generate_filename();
     enum class State {
@@ -45,11 +44,6 @@ class FileUploadHandler : public AbstractHandler {
     bool read_file_content();
 
     void save_file_to_db(const std::string& token);
-
-    std::string random_string(size_t length);
-    static constexpr char characters[] =
-        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    static constexpr size_t characters_size = sizeof(characters) - 1;
 
     std::string token;
     std::filesystem::path save_path;

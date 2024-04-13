@@ -9,6 +9,7 @@
 #include <iostream>
 #include "src/server/Server.h"
 #include "src/server/typenames.h"
+#include <RequestGenerationHandler.h>
 
 auto logger = [](const std::string& s) {
     auto now = std::chrono::system_clock::now();
@@ -39,6 +40,10 @@ void run_server(Server::Server& serv, Database::ConnectionPool& pool) {
 
     serv.add_endpoint('d', [&pool](Server::socket_t client) {
         return std::make_unique<Server::FileDownloadHandler>(client, pool);
+    });
+
+    serv.add_endpoint('r', [&pool](Server::socket_t client) {
+        return std::make_unique<Server::RequestGenerationHandler>(client, pool);
     });
 
     serv.start();

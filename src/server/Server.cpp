@@ -110,18 +110,14 @@ bool Server::process_client(pollfd fd, socket_t client) {
         client_handlers[client]->operator()();
     } catch (const BadInputException &e) {
         use_logger("Клиент предоставил некорректные данные: " + std::string(e.what()));
-        send(client, "ERROR@Invalid data", 19, MSG_NOSIGNAL);
         return false;
     } catch (const SocketException &e) {
-        send(client, "ERROR@Not found", 16, MSG_NOSIGNAL);
         use_logger("Ошибка при работе с сокетом: " + std::string(e.what()));
         return false;
     } catch (const NotFoundException &e) {
-        send(client, "ERROR@Not found", 16, MSG_NOSIGNAL);
         use_logger("Ошибка при поиске данных для клиента: " + std::string(e.what()));
         return false;
     } catch (const std::exception &e) {
-        send(client, "ERROR@Internal error", 21, MSG_NOSIGNAL);
         use_logger("Ошибка при обработке клиента: " + std::string(e.what()));
         return false;
     }
@@ -156,11 +152,13 @@ void Server::start() {
             bool need_continue = process_client(pollfds[i], connections[i]);
             if (!need_continue) {
                 auto state = client_handlers[connections[i]]->get_result();
+                std::string ans = client_handlers[connections[i]]->get_response();
                 if (state == AbstractHandler::Result::ERROR) {
-                    use_logger("Ошибка при обработке клиента. Пользователь отключен.");
+                    use_logger("Ошибка при обработке клиента.");
+                    // TODO возможно возвратом кода ответа занимается сам обработчик в get_response
+                    send(connections[i], ans.c_str(), ans.size(), MSG_NOSIGNAL);
                 } else {
                     // TODO возможно возвратом кода ответа занимается сам обработчик в get_response
-                    std::string ans = "OK@" + client_handlers[connections[i]]->get_response();
                     send(connections[i], ans.c_str(), ans.size(), MSG_NOSIGNAL);
                 }
                 shutdown(connections[i], SHUT_RDWR);

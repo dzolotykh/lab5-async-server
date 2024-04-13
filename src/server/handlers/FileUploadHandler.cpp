@@ -1,17 +1,8 @@
 #include "FileUploadHandler.h"
 
-std::string Server::FileUploadHandler::random_string(size_t length) {
-    std::string result;
-    result.reserve(length);
-    for (size_t i = 0; i < length; ++i) {
-        result.push_back(characters[gen() % characters_size]);
-    }
-    return result;
-}
-
 void Server::FileUploadHandler::generate_filename() {
     do {
-        filepath = std::filesystem::current_path() / (random_string(32) + ".txt");
+        filepath = std::filesystem::current_path() / (StringUtils::random_string(32) + ".txt");
     } while (std::filesystem::exists(filepath));
 }
 
@@ -20,7 +11,7 @@ void Server::FileUploadHandler::generate_filename() {
 
 Server::FileUploadHandler::FileUploadHandler(socket_t client, Database::ConnectionPool& _pool,
                                              std::filesystem::path _save_path)
-    : client(client), gen(rd()), pool(_pool), file_size(0), save_path(std::move(_save_path)) {
+    : client(client), pool(_pool), file_size(0), save_path(std::move(_save_path)), token(StringUtils::random_string(32)) {
     std::filesystem::current_path(save_path);
     generate_filename();
 }

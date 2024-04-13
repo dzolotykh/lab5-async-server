@@ -13,6 +13,7 @@ add_subdirectory(src/libs/graph-bmp-generator)
 
 include_directories(src/database)
 include_directories(src/server/handlers)
+include_directories(src/utils)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -30,6 +31,8 @@ add_executable(main main.cpp
         src/server/handlers/ResultRequestHandler.cpp
         src/server/handlers/FileDownloadHandler.cpp
         src/server/handlers/AbstractHandler.cpp
+        src/server/handlers/RequestGenerationHandler.cpp
+        src/utils/StringUtils.cpp
 )
 
 target_link_libraries(main thread-pool graph-bmp-generator libpqxx::pqxx JsonCpp::JsonCpp GTest::GTest)

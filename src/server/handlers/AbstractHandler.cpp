@@ -3,9 +3,6 @@
 
 void Server::AbstractHandler::read_bytes(int client_socket, size_t bytes, char* dst) {
     size_t bytes_read = 0;
-    if (bytes == 1) {
-        std::cout << "NIGGERS" << std::endl;
-    }
     while (bytes_read < bytes) {
         ssize_t read = recv(client_socket, dst + bytes_read, bytes - bytes_read, MSG_DONTWAIT);
         std::cout << read << std::endl;
