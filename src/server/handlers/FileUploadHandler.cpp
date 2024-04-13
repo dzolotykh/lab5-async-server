@@ -53,6 +53,7 @@ void Server::FileUploadHandler::save_file_to_db(const std::string& token) {
 }
 
 bool Server::FileUploadHandler::read_file_content() {
+    std::cout << file_size << std::endl;
     if (state != State::FILE_CONTENT) {
         return false;
     }
@@ -65,9 +66,9 @@ bool Server::FileUploadHandler::read_file_content() {
 
     if (!reader.has_value()) {
         char* buffer_ptr = buffer.data();
-        reader = read_bytes_nonblock(client, file_size, buffer.data(), buffer.size(), [buffer_ptr, this](size_t need_write) {
-            file.write(buffer_ptr, need_write);
-        });
+        reader = read_bytes_nonblock(
+            client, file_size, buffer.data(), buffer.size(),
+            [buffer_ptr, this](size_t need_write) { file.write(buffer_ptr, need_write); });
     }
 
     auto need_continue = reader.value()();

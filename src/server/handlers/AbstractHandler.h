@@ -1,10 +1,10 @@
 #ifndef LAB5_ABSTRACTHANDLER_H
 #define LAB5_ABSTRACTHANDLER_H
 
+#include <sys/socket.h>
 #include <functional>
 #include <string>
 #include "../Exceptions.h"
-#include <sys/socket.h>
 
 namespace Server {
 class AbstractHandler {
@@ -51,9 +51,10 @@ class AbstractHandler {
     // Функция write_bytes_nonblock умеет постепенно записывать определенное количество байт в сокет.
     // На вход необходимо подать сокет, куда будет производиться запись, количество байт, которое необходимо записать суммарно,
     // и функцию, которая будет предоставлять байты для записи в сокет.
-    static std::function<bool()> write_bytes_nonblock(int client_socket, size_t bytes_write,
-                                                      std::function<std::pair<const char *, size_t>()> get_bytes);
+    static std::function<bool()> write_bytes_nonblock(
+        int client_socket, size_t bytes_write,
+        std::function<std::pair<const char*, size_t>()> get_bytes);
 };
-} // namespace Server
+}    // namespace Server
 
 #endif    //LAB5_ABSTRACTHANDLER_H

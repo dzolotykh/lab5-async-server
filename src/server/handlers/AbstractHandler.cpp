@@ -1,11 +1,18 @@
 #include "AbstractHandler.h"
+#include <iostream>
 
 void Server::AbstractHandler::read_bytes(int client_socket, size_t bytes, char* dst) {
     size_t bytes_read = 0;
+    if (bytes == 1) {
+        std::cout << "NIGGERS" << std::endl;
+    }
     while (bytes_read < bytes) {
         ssize_t read = recv(client_socket, dst + bytes_read, bytes - bytes_read, MSG_DONTWAIT);
+        std::cout << read << std::endl;
         if (read == -1 && errno != EAGAIN) {
             throw SocketException("Ошибка при чтении данных из сокета.");
+        } else if (read == -1) {
+            continue;
         } else if (read == 0) {
             throw BadInputException("Клиент отключился.");
         }
@@ -17,7 +24,7 @@ void Server::AbstractHandler::write_bytes(int client_socket, size_t bytes, const
     size_t bytes_written = 0;
     while (bytes_written < bytes) {
         ssize_t written =
-                send(client_socket, src + bytes_written, bytes - bytes_written, MSG_NOSIGNAL);
+            send(client_socket, src + bytes_written, bytes - bytes_written, MSG_NOSIGNAL);
         if (written == -1 && errno != EAGAIN) {
             throw SocketException("Ошибка при записи данных в сокет.");
         } else if (written == 0) {
@@ -29,9 +36,9 @@ void Server::AbstractHandler::write_bytes(int client_socket, size_t bytes, const
 
 #include <iostream>
 
-std::function<bool()> Server::AbstractHandler::read_bytes_nonblock(int client_socket, size_t need_read,
-                                                           char* dst, size_t buff_size,
-                                                           const std::function<void(size_t)>& on_read) {
+std::function<bool()> Server::AbstractHandler::read_bytes_nonblock(
+    int client_socket, size_t need_read, char* dst, size_t buff_size,
+    const std::function<void(size_t)>& on_read) {
     size_t bytes_read = 0;
     return [client_socket, need_read, dst, buff_size, bytes_read, on_read]() mutable {
         std::cout << "bytes_read: " << bytes_read << std::endl;
@@ -46,8 +53,9 @@ std::function<bool()> Server::AbstractHandler::read_bytes_nonblock(int client_so
     };
 }
 
-std::function<bool()> Server::AbstractHandler::write_bytes_nonblock(int client_socket, size_t bytes_write,
-                                                            std::function<std::pair<const char *, size_t>()> get_bytes) {
+std::function<bool()> Server::AbstractHandler::write_bytes_nonblock(
+    int client_socket, size_t bytes_write,
+    std::function<std::pair<const char*, size_t>()> get_bytes) {
     size_t bytes_written = 0;
     return [client_socket, bytes_write, &bytes_written, &get_bytes]() {
         if (bytes_written < bytes_write) {

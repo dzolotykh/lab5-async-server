@@ -57,6 +57,22 @@ class TestFileUpload(unittest.TestCase):
                 self.assertEqual(in_file, s, 'File content is not the same as the original string.')
         serversocket.close()
 
+    def test_wrong_size_greater_than_original(self):
+        s = self.sample
+        serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        serversocket.connect((self.HOST, self.PORT))
+        size = struct.pack('I', len(s) + 1)
+        encoded_string = s.encode()
+        serversocket.send("u".encode())
+        serversocket.send(size)
+        serversocket.send(encoded_string)
+        serversocket.shutdown(socket.SHUT_WR)
+        answer = serversocket.recv(1024).decode()
+        response = answer.split('@')
+        status = response[0]
+        serversocket.close()
+        self.assertEqual(status, 'ERROR', f'Server returned error: {response}')
+
 class TestFileDownload(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
