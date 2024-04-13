@@ -21,7 +21,7 @@ namespace Server {
 /// \brief Обработчик загрузки файла на сервер.
 class FileUploadHandler : public AbstractHandler {
    private:
-    const int buffer_size = 1024 * 1024;
+    const int buffer_size = 100;
     const int header_size = 4;    // хедер состоит просто из размера файла, влезает в int
 
     socket_t client;
@@ -40,7 +40,6 @@ class FileUploadHandler : public AbstractHandler {
     } state = State::FILE_SIZE;
     size_t bytes_read = 0;
     size_t bytes_not_read = header_size;
-    bool begin_not_written = false;
 
     bool read_file_size();
     bool read_file_content();
@@ -54,10 +53,13 @@ class FileUploadHandler : public AbstractHandler {
 
     std::string token;
     std::filesystem::path save_path;
+    std::ofstream file;
+
+    std::optional<std::function<bool()>> reader;
 
    public:
     FileUploadHandler(socket_t client, Database::ConnectionPool& _pool,
-                      const std::filesystem::path& _save_path);
+                      std::filesystem::path _save_path);
     bool operator()() override;
     std::string get_response() override;
     Result get_result() override;

@@ -1,13 +1,13 @@
 #include <ConnectionPool.h>
+#include <FileDownloadHandler.h>
+#include <FileUploadHandler.h>
+#include <ResultRequestHandler.h>
 #include <json/json.h>
 #include <chrono>
 #include <ctime>
 #include <iomanip>
 #include <iostream>
 #include "src/server/Server.h"
-#include <FileUploadHandler.h>
-#include <FileDownloadHandler.h>
-#include <ResultRequestHandler.h>
 #include "src/server/typenames.h"
 
 auto logger = [](const std::string& s) {

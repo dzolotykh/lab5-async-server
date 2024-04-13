@@ -101,7 +101,7 @@ std::vector<socket_t> Server::process_listener(pollfd listener) {
 }
 
 bool Server::process_client(pollfd fd, socket_t client) {
-    use_logger("Обработка клиента: " + std::to_string(client));
+    // use_logger("Обработка клиента: " + std::to_string(client));
     if (fd.revents & POLLERR) {
         use_logger("Ошибка в сокете клиента.");
         return false;

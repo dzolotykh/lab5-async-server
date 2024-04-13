@@ -29,6 +29,7 @@ add_executable(main main.cpp
         src/server/handlers/EndpointHandler.cpp
         src/server/handlers/ResultRequestHandler.cpp
         src/server/handlers/FileDownloadHandler.cpp
+        src/server/handlers/AbstractHandler.cpp
 )
 
 target_link_libraries(main thread-pool graph-bmp-generator libpqxx::pqxx JsonCpp::JsonCpp GTest::GTest)
