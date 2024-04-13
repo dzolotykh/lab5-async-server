@@ -53,7 +53,7 @@ class AbstractHandler {
     // и функцию, которая будет предоставлять байты для записи в сокет.
     static std::function<bool()> write_bytes_nonblock(
         int client_socket, size_t bytes_write,
-        std::function<std::pair<const char*, size_t>()> get_bytes);
+        const std::function<std::pair<const char*, size_t>()>& get_bytes);
 };
 }    // namespace Server
 

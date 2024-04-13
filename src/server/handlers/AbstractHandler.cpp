@@ -52,9 +52,9 @@ std::function<bool()> Server::AbstractHandler::read_bytes_nonblock(
 
 std::function<bool()> Server::AbstractHandler::write_bytes_nonblock(
     int client_socket, size_t bytes_write,
-    std::function<std::pair<const char*, size_t>()> get_bytes) {
+    const std::function<std::pair<const char*, size_t>()>& get_bytes) {
     size_t bytes_written = 0;
-    return [client_socket, bytes_write, &bytes_written, &get_bytes]() {
+    return [client_socket, bytes_write, bytes_written, get_bytes]() mutable {
         if (bytes_written < bytes_write) {
             auto [src, size] = get_bytes();
             size_t want_write = std::min(bytes_write - bytes_written, size);

@@ -31,13 +31,14 @@ class FileDownloadHandler : public AbstractHandler {
     Database::ConnectionPool& pool;
     socket_t client;
     std::array<char, 32> token;
-    size_t bytes_read = 0;
     size_t bytes_sent = 0;
     std::array<char, 1024 * 1024 * 5> write_buffer;    // TODO вынести в конфиг
 
     static constexpr const char* token_query = "SELECT * FROM files WHERE token = $1";
     std::optional<std::filesystem::path> filepath = std::nullopt;
     std::size_t file_size;
+    std::optional<std::function<bool()>> writer = std::nullopt;
+    std::ifstream source_file;
 
     void read_token();
     void send_file();
