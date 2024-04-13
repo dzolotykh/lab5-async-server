@@ -1,8 +1,8 @@
 #include "RequestGenerationHandler.h"
 
-Server::RequestGenerationHandler::RequestGenerationHandler(Server::socket_t _client, Database::ConnectionPool &_pool): client(_client), pool(_pool) {
-
-}
+Server::RequestGenerationHandler::RequestGenerationHandler(Server::socket_t _client,
+                                                           Database::ConnectionPool &_pool)
+    : client(_client), pool(_pool) {}
 
 std::string Server::RequestGenerationHandler::get_response() {
     return response;

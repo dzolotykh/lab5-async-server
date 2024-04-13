@@ -13,6 +13,8 @@ class Connection;
 /// При запросе соединения из пула, извлекается указатель на соединение из начала очереди. Если очередь пуста,
 /// поток ожидает появления нового соединения в очереди.
 class ConnectionPool final {
+    friend class Connection;
+
    public:
     /// \brief Конструктор пула соединений. Принимает на вход количество соединений и строку для подключения к БД.
     /// \param _num_connections Количество соединений в пуле.
@@ -29,8 +31,6 @@ class ConnectionPool final {
     /// \brief Вернуть соединение в пул.
     /// \param connection Указатель на объект соединения с БД.
     /// \details После возврата соединения в пул, оно становится доступным для других потоков.
-    void return_connection(
-        pqxx::connection conn);    // TODO подумать над тем, чтобы перенести в private
 
     ConnectionPool(const ConnectionPool& other) = delete;
     ConnectionPool& operator=(const ConnectionPool& other) = delete;
@@ -43,6 +43,8 @@ class ConnectionPool final {
     std::queue<pqxx::connection> connections;
     std::mutex connections_mtx;
     std::condition_variable connections_cv;
+
+    void return_connection(pqxx::connection conn);
 };
 
 class Connection final {

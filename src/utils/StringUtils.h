@@ -1,16 +1,16 @@
 #ifndef LAB5_STRINGUTILS_H
 #define LAB5_STRINGUTILS_H
 
-#include <string>
 #include <cstddef>
 #include <random>
+#include <string>
 
 class StringUtils {
-public:
+   public:
     static std::string random_string(size_t length);
 
     static constexpr char numbers_alph[] =
-            "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     static constexpr size_t numbers_alph_size = sizeof(numbers_alph) - 1;
 
     static constexpr char numbers[] = "0123456789";
@@ -21,10 +21,10 @@ public:
 
     static constexpr char ALPH[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     static constexpr size_t ALPH_size = sizeof(ALPH) - 1;
-private:
+
+   private:
     static std::random_device rd;
     static std::mt19937 gen;
 };
 
-
-#endif //LAB5_STRINGUTILS_H
+#endif    //LAB5_STRINGUTILS_H

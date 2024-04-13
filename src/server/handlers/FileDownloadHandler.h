@@ -35,7 +35,7 @@ class FileDownloadHandler : public AbstractHandler {
     size_t bytes_sent = 0;
     std::array<char, 1024 * 1024 * 5> write_buffer;    // TODO вынести в конфиг
 
-    static constexpr char* token_query = "SELECT * FROM files WHERE token = $1";
+    static constexpr const char* token_query = "SELECT * FROM files WHERE token = $1";
     std::optional<std::filesystem::path> filepath = std::nullopt;
     std::size_t file_size;
 

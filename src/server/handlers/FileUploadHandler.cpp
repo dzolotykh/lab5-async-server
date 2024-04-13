@@ -11,7 +11,11 @@ void Server::FileUploadHandler::generate_filename() {
 
 Server::FileUploadHandler::FileUploadHandler(socket_t client, Database::ConnectionPool& _pool,
                                              std::filesystem::path _save_path)
-    : client(client), pool(_pool), file_size(0), save_path(std::move(_save_path)), token(StringUtils::random_string(32)) {
+    : client(client),
+      pool(_pool),
+      file_size(0),
+      save_path(std::move(_save_path)),
+      token(StringUtils::random_string(32)) {
     std::filesystem::current_path(save_path);
     generate_filename();
 }

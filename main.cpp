@@ -1,6 +1,7 @@
 #include <ConnectionPool.h>
 #include <FileDownloadHandler.h>
 #include <FileUploadHandler.h>
+#include <RequestGenerationHandler.h>
 #include <ResultRequestHandler.h>
 #include <json/json.h>
 #include <chrono>
@@ -9,7 +10,6 @@
 #include <iostream>
 #include "src/server/Server.h"
 #include "src/server/typenames.h"
-#include <RequestGenerationHandler.h>
 
 auto logger = [](const std::string& s) {
     auto now = std::chrono::system_clock::now();
