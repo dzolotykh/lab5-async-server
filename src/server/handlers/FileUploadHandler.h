@@ -21,11 +21,11 @@ namespace Server {
 /// \brief Обработчик загрузки файла на сервер.
 class FileUploadHandler : public AbstractHandler {
    private:
-    const int buffer_size = 1024;
+    const int buffer_size = 100;
     const int header_size = 4;    // хедер состоит просто из размера файла, влезает в int
 
     socket_t client;
-    size_t file_size;
+    size_t file_size = 0;
     Database::ConnectionPool& pool;
     std::filesystem::path filepath;
     std::random_device rd;
@@ -40,20 +40,26 @@ class FileUploadHandler : public AbstractHandler {
     } state = State::FILE_SIZE;
     size_t bytes_read = 0;
     size_t bytes_not_read = header_size;
-    bool begin_not_written = false;
 
     bool read_file_size();
     bool read_file_content();
 
-    void save_file_to_db(const std::string& filepath, size_t file_size, const std::string& token);
+    void save_file_to_db(const std::string& token);
 
     std::string random_string(size_t length);
-    static constexpr char characters[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    static constexpr char characters[] =
+        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     static constexpr size_t characters_size = sizeof(characters) - 1;
 
     std::string token;
-public:
-    FileUploadHandler(socket_t client, Database::ConnectionPool& _pool);
+    std::filesystem::path save_path;
+    std::ofstream file;
+
+    std::optional<std::function<bool()>> reader;
+
+   public:
+    FileUploadHandler(socket_t client, Database::ConnectionPool& _pool,
+                      std::filesystem::path _save_path);
     bool operator()() override;
     std::string get_response() override;
     Result get_result() override;

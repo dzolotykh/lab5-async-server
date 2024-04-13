@@ -3,3 +3,5 @@ dev
 .idea
 build
 CMakeUserPresets.json
+uploads
+.DS_Store

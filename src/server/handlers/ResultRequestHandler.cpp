@@ -2,23 +2,23 @@
 #include "../Exceptions.h"
 
 Server::ResultRequestHandler::ResultRequestHandler(Server::socket_t _client,
-                                                   Database::ConnectionPool &_pool): pool(_pool),
-                                                   client(_client) {
-}
+                                                   Database::ConnectionPool &_pool)
+    : pool(_pool), client(_client) {}
 
 bool Server::ResultRequestHandler::read_token() {
     if (state != State::READING_TOKEN) {
         return false;
     }
     ssize_t read = recv(client, buff.data() + bytes_read, buff.size() - bytes_read, MSG_DONTWAIT);
-    if (read == -1 && errno == EAGAIN) { // пока нет данных
+    if (read == -1 && errno == EAGAIN) {    // пока нет данных
         return true;
     } else if (read == -1) {
         state = State::ERROR;
         throw SocketException("Ошибка при чтении токена.");
     } else if (read == 0) {
         state = State::ERROR;
-        throw BadInputException("Клиент отключился, не передав токен, либо переданный токен слишком короткий.");
+        throw BadInputException(
+            "Клиент отключился, не передав токен, либо переданный токен слишком короткий.");
     }
     bytes_read += read;
     if (bytes_read < buff.size()) {
@@ -29,12 +29,14 @@ bool Server::ResultRequestHandler::read_token() {
     return false;
 }
 
+#include <iostream>
+
 bool Server::ResultRequestHandler::save_request_to_db() {
     if (state != State::PROCESSING) {
         return false;
     }
     auto conn = pool.get_connection();
-    pqxx::work w(*conn);
+    pqxx::work w(conn.get_connection());
     pqxx::result res = w.exec_params(token_query, generation_token);
     if (res.empty()) {
         state = State::ERROR;
@@ -48,7 +50,6 @@ bool Server::ResultRequestHandler::save_request_to_db() {
     response = res[0][3].as<std::string>();
 
     w.commit();
-    pool.return_connection(conn);
     state = State::FINISHED;
     return false;
 }
@@ -69,15 +70,14 @@ Server::AbstractHandler::Result Server::ResultRequestHandler::get_result() {
 }
 
 bool Server::ResultRequestHandler::operator()() {
-        switch (state) {
-            case State::READING_TOKEN:
-                return read_token();
-            case State::PROCESSING:
-                return save_request_to_db();
-            case State::ERROR:
-                return false;
-            case State::FINISHED:
-                return false;
-        }
-
+    switch (state) {
+        case State::READING_TOKEN:
+            return read_token();
+        case State::PROCESSING:
+            return save_request_to_db();
+        case State::ERROR:
+            return false;
+        case State::FINISHED:
+            return false;
+    }
 }

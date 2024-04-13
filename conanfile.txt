@@ -1,6 +1,7 @@
 [requires]
 libpqxx/7.9.0
 jsoncpp/1.9.5
+gtest/1.14.0
 [generators]
 CMakeDeps
 CMakeToolchain

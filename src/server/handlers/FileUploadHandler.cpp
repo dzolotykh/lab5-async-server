@@ -11,14 +11,17 @@ std::string Server::FileUploadHandler::random_string(size_t length) {
 
 void Server::FileUploadHandler::generate_filename() {
     do {
-        filepath = std::filesystem::temp_directory_path() / random_string(32);
+        filepath = std::filesystem::current_path() / (random_string(32) + ".txt");
     } while (std::filesystem::exists(filepath));
 }
 
 #include <iostream>
+#include <utility>
 
-Server::FileUploadHandler::FileUploadHandler(socket_t client, Database::ConnectionPool& _pool)
-    : client(client), gen(rd()), pool(_pool), file_size(0) {
+Server::FileUploadHandler::FileUploadHandler(socket_t client, Database::ConnectionPool& _pool,
+                                             std::filesystem::path _save_path)
+    : client(client), gen(rd()), pool(_pool), file_size(0), save_path(std::move(_save_path)) {
+    std::filesystem::current_path(save_path);
     generate_filename();
 }
 
@@ -26,88 +29,55 @@ bool Server::FileUploadHandler::read_file_size() {
     if (state != State::FILE_SIZE) {
         return false;
     }
-    ssize_t read = recv(client, buffer.data() + bytes_read, buffer_size - bytes_read, MSG_DONTWAIT);
-    if (read == -1 && errno == EAGAIN) {
-        return true;
-    } else if (read == -1) {
-        state = State::FINISHED;
-        throw std::runtime_error("Ошибка при чтении размера файла");
-    } else if (read == 0) {
-        state = State::FINISHED;
-        return false;    // клиент отключился
-    }
-    bytes_read += read;
-    if (read + bytes_read < header_size) {
-        return true;
-    }
+
+    // так как ввод достаточно маленький, мы можем считать его за 1 раз
+    read_bytes(client, header_size, buffer.data());
+
     file_size = *reinterpret_cast<int32_t*>(buffer.data());
 
-    buffer = std::vector<char>(buffer.begin() + header_size, buffer.end());
-    buffer.resize(buffer_size);
-    state = State::FILE_CONTENT;
-    bytes_read -= header_size;
-    if (bytes_read > 0) {
-        begin_not_written = true;
+    if (file_size <= 0) {
+        state = State::ERROR;
+        throw BadInputException("Размер файла не может быть отрицательным или равным нулю.");
     }
-    bytes_not_read = file_size - bytes_read;
+
+    state = State::FILE_CONTENT;
     return true;
 }
 
-void Server::FileUploadHandler::save_file_to_db(const std::string& filepath, size_t file_size, const std::string& token) {
+void Server::FileUploadHandler::save_file_to_db(const std::string& token) {
     auto conn = pool.get_connection();
-    pqxx::work w(*conn);
-    w.exec("INSERT INTO files (filepath, size, token) VALUES ('" + filepath + "', " + std::to_string(file_size) +
-           ", '" + token + "')");
+    pqxx::work w(conn.get_connection());
+    w.exec("INSERT INTO files (filepath, size, token) VALUES ('" + filepath.string() + "', " +
+           std::to_string(file_size) + ", '" + token + "')");
     w.commit();
-    pool.return_connection(conn);
 }
 
 bool Server::FileUploadHandler::read_file_content() {
+    std::cout << file_size << std::endl;
     if (state != State::FILE_CONTENT) {
         return false;
     }
-    std::ofstream file(filepath, std::ios::app | std::ios::binary);
+    file.open(filepath, std::ios::app | std::ios::binary);
     if (!file.is_open()) {
         state = State::ERROR;
         throw std::runtime_error("Не удалось открыть файл для записи. Имя файла: " +
                                  filepath.string());
     }
 
-    if (begin_not_written) {
-        file.write(buffer.data(), static_cast<std::streamsize>(bytes_read));
-        begin_not_written = false;
-        if (bytes_read == file_size) {
-            token = random_string(32);
-            save_file_to_db(absolute(filepath).string(), file_size, token);
-            state = State::FINISHED;
-            return false;
-        }
+    if (!reader.has_value()) {
+        char* buffer_ptr = buffer.data();
+        reader = read_bytes_nonblock(
+            client, file_size, buffer.data(), buffer.size(),
+            [buffer_ptr, this](size_t need_write) { file.write(buffer_ptr, need_write); });
     }
 
-    ssize_t read = recv(client, buffer.data(), buffer_size, MSG_DONTWAIT);
-    if (read == -1 && errno == EAGAIN) {
-        return true;
-    } else if (read == -1) {
-        state = State::ERROR;
-        throw std::runtime_error("Ошибка при чтении содержимого файла");
-    } else if (read == 0) {
-        state = State::ERROR;
-        return false;    // клиент отключился
-    }
-    bytes_read += read;
-    if (read > bytes_not_read) {
-        state = State::ERROR;
-        throw std::runtime_error("Прочитано больше байт, чем заявлено в заголовке.");
-    }
-    bytes_not_read -= read;
-    file.write(buffer.data(), read);
-    if (bytes_not_read == 0) {
-        token = random_string(32);
-        save_file_to_db(absolute(filepath).string(), file_size, token);
+    auto need_continue = reader.value()();
+    file.close();
+    if (!need_continue) {
+        save_file_to_db(token);
         state = State::FINISHED;
-        return false;
     }
-    return true;
+    return need_continue;
 }
 
 bool Server::FileUploadHandler::operator()() {
