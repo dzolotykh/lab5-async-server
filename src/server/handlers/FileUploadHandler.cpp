@@ -10,12 +10,14 @@ void Server::FileUploadHandler::generate_filename() {
 #include <utility>
 
 Server::FileUploadHandler::FileUploadHandler(socket_t client, Database::ConnectionPool& _pool,
-                                             std::filesystem::path _save_path)
+                                             std::filesystem::path _save_path, int32_t _max_file_size)
     : client(client),
       pool(_pool),
       file_size(0),
       save_path(std::move(_save_path)),
-      token(StringUtils::random_string(32)) {
+      token(StringUtils::random_string(32)),
+    max_file_size(_max_file_size)
+      {
     std::filesystem::current_path(save_path);
     generate_filename();
 }
@@ -36,9 +38,13 @@ bool Server::FileUploadHandler::read_file_size() {
     file_size = *reinterpret_cast<int32_t*>(buffer.data());
 
     if (file_size <= 0) {
-        state = State::ERROR;
         response = "ERROR|Bad input. File size must be positive.";
         throw BadInputException("Размер файла не может быть отрицательным или равным нулю.");
+    }
+
+    if (file_size > max_file_size && max_file_size != -1) {
+        response = "ERROR|Bad input. File size must be less than " + std::to_string(max_file_size) + " bytes.";
+        throw BadInputException("Размер файла превышает максимально допустимый размер.");
     }
 
     state = State::FILE_CONTENT;
@@ -76,7 +82,7 @@ bool Server::FileUploadHandler::read_file_content() {
         file.close();
         if (!need_continue) {
             save_file_to_db(token);
-            response = "OK|" + token + "|" + filepath.string();
+            response = "OK|" + token;
             state = State::FINISHED;
         }
         std::cout << need_continue << std::endl;

@@ -27,6 +27,7 @@ class FileUploadHandler : public AbstractHandler {
 
     socket_t client;
     size_t file_size = 0;
+    int32_t max_file_size;
     Database::ConnectionPool& pool;
     std::filesystem::path filepath;
     std::vector<char> buffer = std::vector<char>(buffer_size, 0);
@@ -53,7 +54,7 @@ class FileUploadHandler : public AbstractHandler {
 
    public:
     FileUploadHandler(socket_t client, Database::ConnectionPool& _pool,
-                      std::filesystem::path _save_path);
+                      std::filesystem::path _save_path, int32_t _max_file_size);
     bool operator()() override;
     std::string get_response() override;
 };
