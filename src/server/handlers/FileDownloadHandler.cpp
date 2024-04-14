@@ -22,17 +22,6 @@ bool Server::FileDownloadHandler::operator()() {
     return true;
 }
 
-Server::AbstractHandler::Result Server::FileDownloadHandler::get_result() {
-    switch (state) {
-        case State::FINISHED:
-            return Result::OK;
-        case State::ERROR:
-            return Result::ERROR;
-        default:
-            return Result::PROCESSING;
-    }
-}
-
 std::string Server::FileDownloadHandler::get_response() {
     return "";
 }

@@ -25,8 +25,13 @@ bool Server::FileUploadHandler::read_file_size() {
         return false;
     }
 
-    // так как ввод достаточно маленький, мы можем считать его за 1 раз
-    read_bytes(client, header_size, buffer.data());
+    if (token_reader == nullptr) {
+        token_reader =
+            read_bytes_nonblock(client, header_size, buffer.data(), buffer.size(), [](size_t) {});
+    }
+    if (token_reader()) {
+        return true;
+    }
 
     file_size = *reinterpret_cast<int32_t*>(buffer.data());
 
@@ -60,59 +65,44 @@ bool Server::FileUploadHandler::read_file_content() {
                                  filepath.string());
     }
 
-    if (!reader.has_value()) {
-        char* buffer_ptr = buffer.data();
-        reader = read_bytes_nonblock(
+    if (file_reader == nullptr) {
+        file_reader = read_bytes_nonblock(
             client, file_size, buffer.data(), buffer.size(),
-            [buffer_ptr, this](size_t need_write) { file.write(buffer_ptr, need_write); });
+            [this](size_t need_write) { file.write(buffer.data(), need_write); });
     }
 
-    bool need_continue = false;
     try {
-        need_continue = reader.value()();
-    } catch (const SocketException& e) {
+        bool need_continue = file_reader();
+        file.close();
+        if (!need_continue) {
+            save_file_to_db(token);
+            response = "OK|" + token + "|" + filepath.string();
+            state = State::FINISHED;
+        }
+        std::cout << need_continue << std::endl;
+        return need_continue;
+    } catch (BadInputException& e) {
+        std::filesystem::remove(filepath);
         state = State::ERROR;
-        response = "ERROR|Internal server error.";
-        throw;
-    } catch (const BadInputException &e) {
+        response = "ERROR|Bad input. " + std::string(e.what());
+        return false;
+    } catch (std::exception& e) {
+        std::filesystem::remove(filepath);
         state = State::ERROR;
-        response = "ERROR|Bad input.";
-        throw;
-    } catch (const std::exception& e) {
-        state = State::ERROR;
-        response = "ERROR|Internal server error.";
         throw;
     }
-    file.close();
-    if (!need_continue) {
-        save_file_to_db(token);
-        state = State::FINISHED;
-        response = "OK|" + token + "|" + filepath.string();
-    }
-    return need_continue;
 }
 
 bool Server::FileUploadHandler::operator()() {
     if (state == State::FINISHED || state == State::ERROR) {
         return false;
     } else if (state == State::FILE_SIZE) {
-        read_file_size();
+        return read_file_size();
     } else {
-        read_file_content();
+        return read_file_content();
     }
-    return true;
 }
 
 std::string Server::FileUploadHandler::get_response() {
     return response;
-}
-
-Server::AbstractHandler::Result Server::FileUploadHandler::get_result() {
-    if (state == State::FINISHED) {
-        return Result::OK;
-    } else if (state == State::ERROR) {
-        return Result::ERROR;
-    } else {
-        return Result::PROCESSING;
-    }
 }

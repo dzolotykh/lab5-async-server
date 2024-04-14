@@ -37,8 +37,6 @@ class FileUploadHandler : public AbstractHandler {
         FINISHED,
         ERROR,
     } state = State::FILE_SIZE;
-    size_t bytes_read = 0;
-    size_t bytes_not_read = header_size;
 
     bool read_file_size();
     bool read_file_content();
@@ -50,14 +48,14 @@ class FileUploadHandler : public AbstractHandler {
     std::filesystem::path save_path;
     std::ofstream file;
 
-    std::optional<std::function<bool()>> reader;
+    std::function<bool()> file_reader = nullptr;
+    std::function<bool()> token_reader = nullptr;
 
    public:
     FileUploadHandler(socket_t client, Database::ConnectionPool& _pool,
                       std::filesystem::path _save_path);
     bool operator()() override;
     std::string get_response() override;
-    Result get_result() override;
 };
 }    // namespace Server
 

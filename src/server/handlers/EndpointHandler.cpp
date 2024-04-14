@@ -1,31 +1,25 @@
 #include "EndpointHandler.h"
 
+#include <iostream>
+
 bool Server::EndpointHandler::operator()() {
-    char endpoint;
-    ssize_t read = recv(client, &endpoint, sizeof(endpoint), MSG_DONTWAIT);
-    if (read == -1 && errno == EAGAIN) {
-        return true;
-    } else if (read == -1) {
-        result = Result::ERROR;
-        throw std::runtime_error("Ошибка при чтении эндпоинта. Код ошибки: " +
-                                 std::to_string(errno));
+    if (reader == nullptr) {
+        reader = read_bytes_nonblock(client, sizeof(endpoint), &endpoint, sizeof(endpoint),
+                                     [this](size_t) {});
     }
-    if (handlers.find(endpoint) == handlers.end()) {
-        result = Result::ERROR;
-        throw std::runtime_error("Неизвестный эндпоинт: " + std::to_string(endpoint));
+    if (!reader()) {
+        if (handlers.find(endpoint) == handlers.end()) {
+            response = "ERROR|Unknown endpoint.";
+            return false;
+        }
+        auto handler = handlers[endpoint](client);
+        change_handler(std::move(handler));
     }
-    auto handler = handlers[endpoint](client);
-    change_handler(std::move(handler));
-    result = Result::OK;
-    return false;
+    return true;
 }
 
 std::string Server::EndpointHandler::get_response() {
-    return "";
-}
-
-Server::AbstractHandler::Result Server::EndpointHandler::get_result() {
-    return result;
+    return response;
 }
 
 Server::EndpointHandler::EndpointHandler(std::unordered_map<char, handler_provider_t>& _handlers,

@@ -29,7 +29,6 @@ void Database::ConnectionPool::return_connection(pqxx::connection connection) {
 #include <iostream>
 
 Database::ConnectionPool::~ConnectionPool() {
-    std::cout << "ConnectionPool destructor" << std::endl;
     for (size_t i = 0; i < num_connections; ++i) {
         pqxx::connection c = std::move(connections.front());
         c.close();

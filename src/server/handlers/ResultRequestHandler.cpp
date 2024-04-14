@@ -58,17 +58,6 @@ std::string Server::ResultRequestHandler::get_response() {
     return response;
 }
 
-Server::AbstractHandler::Result Server::ResultRequestHandler::get_result() {
-    switch (state) {
-        case State::ERROR:
-            return Result::ERROR;
-        case State::FINISHED:
-            return Result::OK;
-        default:
-            return Result::PROCESSING;
-    }
-}
-
 bool Server::ResultRequestHandler::operator()() {
     switch (state) {
         case State::READING_TOKEN:

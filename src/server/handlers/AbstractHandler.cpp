@@ -38,14 +38,19 @@ std::function<bool()> Server::AbstractHandler::read_bytes_nonblock(
     const std::function<void(size_t)>& on_read) {
     size_t bytes_read = 0;
     return [client_socket, need_read, dst, buff_size, bytes_read, on_read]() mutable {
-        std::cout << "bytes_read: " << bytes_read << std::endl;
         if (bytes_read < need_read) {
             size_t want_read = std::min(need_read - bytes_read, buff_size);
-            read_bytes(client_socket, want_read, dst);
-            bytes_read += want_read;
-            on_read(want_read);
+            ssize_t read = recv(client_socket, dst, want_read, MSG_DONTWAIT);
+            if (read == -1 && errno != EAGAIN) {
+                throw SocketException("Ошибка при чтении данных из сокета.");
+            } else if (read == -1) {
+                return true;
+            } else if (read == 0) {
+                throw BadInputException("Клиент отключился.");
+            }
+            bytes_read += read;
+            on_read(read);
         }
-        std::cout << "bytes_read: " << bytes_read << " " << need_read << std::endl;
         return bytes_read < need_read;
     };
 }

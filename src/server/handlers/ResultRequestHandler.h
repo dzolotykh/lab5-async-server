@@ -13,7 +13,6 @@ class ResultRequestHandler : public AbstractHandler {
     ResultRequestHandler(socket_t client, Database::ConnectionPool& _pool);
     bool operator()() override;
     std::string get_response() override;
-    Result get_result() override;
 
    private:
     socket_t client;

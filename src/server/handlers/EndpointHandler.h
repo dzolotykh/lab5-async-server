@@ -20,14 +20,14 @@ class EndpointHandler : public AbstractHandler {
 
     std::string get_response() override;
 
-    Result get_result() override;
-
    private:
     std::unordered_map<char, handler_provider_t>& handlers;
     socket_t client;
-    Result result = Result::PROCESSING;
     /// Функция, которая будет вызвана в случае успешного определения эндпоинта.
     changer_t change_handler;
+    std::function<bool()> reader = nullptr;
+    char endpoint;
+    std::string response;
 };
 }    // namespace Server
 

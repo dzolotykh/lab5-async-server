@@ -17,7 +17,6 @@ class FileDownloadHandler : public AbstractHandler {
     FileDownloadHandler(socket_t _client, Database::ConnectionPool& _pool);
 
     bool operator()() override;
-    AbstractHandler::Result get_result() override;
     std::string get_response() override;
 
    private:

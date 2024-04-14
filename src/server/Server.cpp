@@ -55,6 +55,14 @@ void Server::prepare_listener_socket() {
     }
 }
 
+std::string get_ip(socket_t socket) {
+    auto *pV4Addr = (sockaddr_in *)&socket;
+    in_addr ipAddr = pV4Addr->sin_addr;
+    char str[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &ipAddr, str, INET_ADDRSTRLEN);
+    return {str};
+}
+
 /*
  * Функция process_listener принимает на вход структуру pollfd, которая содержит информацию о сокете-слушателе.
  * Если в структуре pollfd есть событие POLLERR, то функция бросает исключение с сообщением ERROR_POLL_LISTENER.
@@ -68,9 +76,10 @@ std::vector<socket_t> Server::process_listener(pollfd listener) {
         throw std::runtime_error(ERROR_POLL_LISTENER + std::to_string(POLLERR));
     }
 
-    for (;;) {
-        sockaddr_in peer{};
-        socklen_t peer_size = sizeof(peer);
+    sockaddr_in peer{};
+    socklen_t peer_size = sizeof(peer);
+
+    while (true) {
         socket_t channel = accept(listener_socket, (sockaddr *)&peer, &peer_size);
         if (channel < 0) {
             if (errno == EWOULDBLOCK) {
@@ -87,88 +96,53 @@ std::vector<socket_t> Server::process_listener(pollfd listener) {
         client_handlers[channel] = std::make_unique<EndpointHandler>(endpoints, channel, changer);
         client_status[channel] = true;
 
-        // получаем ip-address пользователя
-        auto *pV4Addr = (sockaddr_in *)&channel;
-        in_addr ipAddr = pV4Addr->sin_addr;
-        char str[INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &ipAddr, str, INET_ADDRSTRLEN);
-
         set_nonblock(channel);
         result.push_back({channel});
-        use_logger("Создано подключение для нового клиента. IP: " + std::string(str));
+        use_logger("Создано подключение для нового клиента. IP: " + get_ip(channel));
     }
     return result;
 }
 
 bool Server::process_client(pollfd fd, socket_t client) {
-    // use_logger("Обработка клиента: " + std::to_string(client));
     if (fd.revents & POLLERR) {
-        use_logger("Ошибка в сокете клиента.");
-        return false;
+        throw SocketException("Ошибка при работе с сокетом: " + std::to_string(client));
     }
-    try {
-        client_handlers[client]->operator()();
-    } catch (const BadInputException &e) {
-        use_logger("Клиент предоставил некорректные данные: " + std::string(e.what()));
-        return false;
-    } catch (const SocketException &e) {
-        use_logger("Ошибка при работе с сокетом: " + std::string(e.what()));
-        return false;
-    } catch (const NotFoundException &e) {
-        use_logger("Ошибка при поиске данных для клиента: " + std::string(e.what()));
-        return false;
-    } catch (const std::exception &e) {
-        use_logger("Ошибка при обработке клиента: " + std::string(e.what()));
-        return false;
-    }
-    auto result = client_handlers[client]->get_result();
-    if (result ==
-        AbstractHandler::Result::
-            ERROR) {    // TODO вообще, это не должно происходить. Поправлю когда везде будут нормально выбрасываться исключения
-        use_logger("Ошибка при обработке клиента. Пользователь должен быть отключен.");
-        return false;
-    }
-    if (result == AbstractHandler::Result::OK) {
-        use_logger("Клиент успешно обработан.");
-        return false;
-    }
-    return true;
+    return client_handlers[client]->operator()();
 }
 
 void Server::start() {
     prepare_listener_socket();
-
     polling_wrapper = PollingWrapper(listener_socket);
-
     use_logger(start_message());
 
     while (is_running) {
         auto [connections, pollfds] = polling_wrapper.get();
-        poll(pollfds.data(), pollfds.size(), 100);
+        poll(pollfds.data(), pollfds.size(), -1);
         // Проверяем, есть ли новые подключения
         auto new_connections = process_listener(pollfds.back());
         // Обрабатываем все старые подключения
         for (size_t i = 0; i + 1 < connections.size(); ++i) {
-            bool need_continue = process_client(pollfds[i], connections[i]);
-            if (!need_continue) {
-                auto state = client_handlers[connections[i]]->get_result();
-                std::string response = client_handlers[connections[i]]->get_response();
-                int32_t response_size = response.size();
-                std::string response_size_str(reinterpret_cast<char*>(&response_size), sizeof(response_size));
-                response_size_str += response;
-                response = std::move(response_size_str);
-                if (state == AbstractHandler::Result::ERROR) {
-                    use_logger("Ошибка при обработке клиента.");
-                    // TODO возможно возвратом кода ответа занимается сам обработчик в get_response
+            try {
+                if (!process_client(pollfds[i], connections[i])) {
+                    std::string response = client_handlers[connections[i]]->get_response();
+                    int32_t response_size = response.size();
+                    std::string response_size_str(reinterpret_cast<char *>(&response_size),
+                                                  sizeof(response_size));
+                    response_size_str += response;
+                    response = std::move(response_size_str);
                     send(connections[i], response.c_str(), response.size(), MSG_NOSIGNAL);
-                } else {
-                    // TODO возможно возвратом кода ответа занимается сам обработчик в get_response
-                    send(connections[i], response.c_str(), response.size(), MSG_NOSIGNAL);
+                    shutdown(connections[i], SHUT_RDWR);
+                    close(connections[i]);
+                    client_handlers.erase(connections[i]);
+                    use_logger("Клиент отключен: " + std::to_string(connections[i]));
+                    connections[i] = -1;
                 }
+            } catch (std::exception &e) {
+                use_logger("Ошибка при обработке клиента: " + std::string(e.what()));
+                send(connections[i], "ERROR|Internal server error.", 27, MSG_NOSIGNAL);
                 shutdown(connections[i], SHUT_RDWR);
                 close(connections[i]);
                 client_handlers.erase(connections[i]);
-                use_logger("Клиент отключен: " + std::to_string(connections[i]));
                 connections[i] = -1;
             }
         }
