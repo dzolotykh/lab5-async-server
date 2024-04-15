@@ -65,6 +65,7 @@ class Server {
     std::unordered_map<socket_t, bool> client_status;
 
     std::unordered_map<char, handler_provider_t> endpoints;
+    constexpr static const char* INTERNAL_ERROR_TEXT = "ERROR|Internal server error.";
 };
 }    // namespace Server
 

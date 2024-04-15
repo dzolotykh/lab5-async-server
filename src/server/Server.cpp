@@ -111,6 +111,13 @@ bool Server::process_client(pollfd fd, socket_t client) {
     return client_handlers[client]->operator()();
 }
 
+std::string prepare_response(const std::string& response) {
+    int32_t response_size = response.size();
+    std::string response_size_str(reinterpret_cast<char *>(&response_size), sizeof(response_size));
+    response_size_str += response;
+    return response_size_str;
+}
+
 void Server::start() {
     prepare_listener_socket();
     polling_wrapper = PollingWrapper(listener_socket);
@@ -125,12 +132,8 @@ void Server::start() {
         for (size_t i = 0; i + 1 < connections.size(); ++i) {
             try {
                 if (!process_client(pollfds[i], connections[i])) {
-                    std::string response = client_handlers[connections[i]]->get_response();
-                    int32_t response_size = response.size();
-                    std::string response_size_str(reinterpret_cast<char *>(&response_size),
-                                                  sizeof(response_size));
-                    response_size_str += response;
-                    response = std::move(response_size_str);
+                    auto response = client_handlers[connections[i]]->get_response();
+                    response = prepare_response(response);
                     send(connections[i], response.c_str(), response.size(), MSG_NOSIGNAL);
                     shutdown(connections[i], SHUT_RDWR);
                     close(connections[i]);
@@ -140,7 +143,8 @@ void Server::start() {
                 }
             } catch (std::exception &e) {
                 use_logger("Ошибка при обработке клиента: " + std::string(e.what()));
-                send(connections[i], "ERROR|Internal server error.", 27, MSG_NOSIGNAL);
+                auto response = prepare_response(INTERNAL_ERROR_TEXT);
+                send(connections[i], response.c_str(), response.size(), MSG_NOSIGNAL);
                 socket_t client = connections[i];
                 shutdown(client, SHUT_RDWR);
                 close(client);
