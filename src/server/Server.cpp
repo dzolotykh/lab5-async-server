@@ -20,7 +20,6 @@ std::string Server::start_message() const {
           << "\n";
     hello << "⚡️ Максимальное количество одновременно работающих процессов: "
           << params.working_threads << "\n";
-    hello << "⚡️ Количество подключений в пуле: " << conne << "\n";
     return hello.str();
 }
 

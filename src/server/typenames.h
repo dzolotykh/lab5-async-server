@@ -2,6 +2,7 @@
 #define LAB5_TYPENAMES_H
 
 #include <functional>
+#include <memory>
 #include "handlers/AbstractHandler.h"
 
 namespace Server {

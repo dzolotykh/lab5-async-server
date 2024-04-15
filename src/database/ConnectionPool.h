@@ -1,6 +1,7 @@
 #ifndef LAB5_CONNECTIONPOOL_H
 #define LAB5_CONNECTIONPOOL_H
 
+#include <condition_variable>
 #include <mutex>
 #include <pqxx/pqxx>
 #include <queue>
