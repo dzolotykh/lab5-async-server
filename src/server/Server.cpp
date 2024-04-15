@@ -23,7 +23,7 @@ std::string Server::start_message() const {
     return hello.str();
 }
 
-Server::Server(Params _params) : params(std::move(_params)) {}
+Server::Server(Params _params) : params(std::move(_params)), pool(params.working_threads) {}
 
 void Server::set_nonblock(socket_t socket) {
     int status = fcntl(socket, F_SETFL, fcntl(socket, F_GETFL, 0) | O_NONBLOCK);
@@ -118,6 +118,39 @@ std::string prepare_response(const std::string& response) {
     return response_size_str;
 }
 
+void Server::process_all_clients(pollfds_iter pollfds_begin, pollfds_iter pollfds_end,
+                                 sockets_iter sockets_begin, sockets_iter sockets_end) {
+    if (pollfds_end - pollfds_begin != sockets_end - sockets_begin) {
+        throw std::runtime_error("pollfds and sockets have different sizes");
+    }
+    auto pollfd_i = pollfds_begin;
+    auto socket_i = sockets_begin;
+    for (;pollfd_i != pollfds_end; pollfd_i++, socket_i++) {
+        socket_t& client = *socket_i;
+        pollfd& fd = *pollfd_i;
+        try {
+            if (!process_client(fd, client)) {
+                auto response = client_handlers[client]->get_response();
+                response = prepare_response(response);
+                send(client, response.c_str(), response.size(), MSG_NOSIGNAL);
+                shutdown(client, SHUT_RDWR);
+                close(client);
+                client_handlers.erase(client);
+                use_logger("Клиент отключен: " + std::to_string(client));
+                client = -1;
+            }
+        } catch (const std::exception &e) {
+            use_logger("Ошибка при обработке клиента: " + std::string(e.what()));
+            auto response = prepare_response(INTERNAL_ERROR_TEXT);
+            send(client, response.c_str(), response.size(), MSG_NOSIGNAL);
+            shutdown(client, SHUT_RDWR);
+            close(client);
+            client_handlers.erase(client);
+            client = -1;
+        }
+    }
+}
+
 void Server::start() {
     prepare_listener_socket();
     polling_wrapper = PollingWrapper(listener_socket);
@@ -129,29 +162,23 @@ void Server::start() {
         // Проверяем, есть ли новые подключения
         auto new_connections = process_listener(pollfds.back());
         // Обрабатываем все старые подключения
-        for (size_t i = 0; i + 1 < connections.size(); ++i) {
-            try {
-                if (!process_client(pollfds[i], connections[i])) {
-                    auto response = client_handlers[connections[i]]->get_response();
-                    response = prepare_response(response);
-                    send(connections[i], response.c_str(), response.size(), MSG_NOSIGNAL);
-                    shutdown(connections[i], SHUT_RDWR);
-                    close(connections[i]);
-                    client_handlers.erase(connections[i]);
-                    use_logger("Клиент отключен: " + std::to_string(connections[i]));
-                    connections[i] = -1;
-                }
-            } catch (std::exception &e) {
-                use_logger("Ошибка при обработке клиента: " + std::string(e.what()));
-                auto response = prepare_response(INTERNAL_ERROR_TEXT);
-                send(connections[i], response.c_str(), response.size(), MSG_NOSIGNAL);
-                socket_t client = connections[i];
-                shutdown(client, SHUT_RDWR);
-                close(client);
-                client_handlers.erase(connections[i]);
-                connections[i] = -1;
-            }
+
+        size_t clients_per_thread = (connections.size() + params.working_threads - 1)  / params.working_threads;
+
+        for (size_t i = 0; i + 1 < pollfds.size(); i += clients_per_thread) {
+            auto connections_begin = connections.begin() + i;
+            auto connections_end = std::min(connections_begin + clients_per_thread, connections.end() - 1);
+            auto pollfds_begin = pollfds.begin() + i;
+            auto pollfds_end = std::min(pollfds_begin + clients_per_thread, pollfds.end() - 1);
+            pool.add_task([this, connections_begin, connections_end, pollfds_begin, pollfds_end]() {
+                process_all_clients(pollfds_begin, pollfds_end, connections_begin, connections_end);
+            });
         }
+
+        pool.wait_all();
+
+        // process_all_clients(pollfds.begin(), pollfds.end() - 1, connections.begin(), connections.end() - 1);
+
         polling_wrapper = PollingWrapper(connections, pollfds);
         polling_wrapper.remove_disconnected();
 

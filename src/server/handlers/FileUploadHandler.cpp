@@ -85,7 +85,6 @@ bool Server::FileUploadHandler::read_file_content() {
             response = "OK|" + token;
             state = State::FINISHED;
         }
-        std::cout << need_continue << std::endl;
         return need_continue;
     } catch (BadInputException& e) {
         std::filesystem::remove(filepath);

@@ -26,8 +26,6 @@ void Database::ConnectionPool::return_connection(pqxx::connection connection) {
     connections_cv.notify_one();
 }
 
-#include <iostream>
-
 Database::ConnectionPool::~ConnectionPool() {
     for (size_t i = 0; i < num_connections; ++i) {
         pqxx::connection c = std::move(connections.front());

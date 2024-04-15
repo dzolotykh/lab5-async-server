@@ -19,29 +19,39 @@ class FileDownloadHandler : public AbstractHandler {
     bool operator()() override;
     std::string get_response() override;
 
+    class FileNotFoundException: public NotFoundException {
+    public:
+        explicit FileNotFoundException(const std::string& message): NotFoundException(message) {}
+    };
+
+    class TokenNotFoundException: public NotFoundException {
+    public:
+        explicit TokenNotFoundException(const std::string& message): NotFoundException(message) {}
+    };
+
    private:
     enum class State {
-        READING_TOKEN,
-        SENDING_FILE,
-        FINISHED,
-        ERROR,
-    } state = State::READING_TOKEN;
+        TOKEN,
+        FILE,
+        FINISHED
+    } state = State::TOKEN;
 
     Database::ConnectionPool& pool;
     socket_t client;
-    std::array<char, 32> token;
+    std::vector<char> token_buffer;
+    std::string token;
     size_t bytes_sent = 0;
-    std::array<char, 1024 * 1024 * 5> write_buffer;    // TODO вынести в конфиг
+    std::vector<char> write_buffer;    // TODO вынести в конфиг размер буфера
 
-    static constexpr const char* token_query = "SELECT * FROM files WHERE token = $1";
-    std::optional<std::filesystem::path> filepath = std::nullopt;
+    static constexpr const char* token_query = "SELECT output_path FROM requests WHERE token = $1";
+    std::filesystem::path filepath = std::filesystem::path();
     std::size_t file_size;
-    std::optional<std::function<bool()>> writer = std::nullopt;
+    std::function<bool()> writer = nullptr;
+    std::function<bool()> token_reader = nullptr;
     std::ifstream source_file;
+    std::string response;
 
-    void read_token();
-    void send_file();
-    void set_path(const std::string& token);
+    void set_path();
 };
 }    // namespace Server
 

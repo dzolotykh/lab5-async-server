@@ -13,11 +13,13 @@
 #include <sstream>
 #include <unordered_map>
 
+
 #include "Params.h"
 #include "PollingWrapper.h"
 #include "handlers/FileUploadHandler.h"
 #include "typenames.h"
 #include <thread>
+#include <Pool.h>
 
 namespace Server {
 class Server {
@@ -53,11 +55,16 @@ class Server {
 
     bool process_client(pollfd fd, socket_t client);
 
+    using pollfds_iter = std::vector<pollfd>::iterator;
+    using sockets_iter = std::vector<socket_t>::iterator;
+    void process_all_clients(pollfds_iter pollfds_begin, pollfds_iter pollfds_end, sockets_iter sockets_begin, sockets_iter sockets_end);
+
     Params params;
     socket_t listener_socket;
     std::mutex logger_mtx;
     PollingWrapper polling_wrapper;
     std::atomic<bool> is_running = true;
+    ThreadPool::Pool pool;
 
     /* Тут будем хранить функции-обработчики для каждого клиента. Если работа с клиентом завершена,
      * то обработчик должен вернуть false. */
