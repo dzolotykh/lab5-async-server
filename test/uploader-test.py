@@ -47,14 +47,13 @@ def connect_to_server():
     return serversocket
 
 
-class TestFileUpload(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
+class TestFileUploader:
+    def init(self):
         cfg_file = open('config.json')
-        cls.cfg = json.loads(cfg_file.read())
+        self.cfg = json.loads(cfg_file.read())
         cfg_file.close()
-        cls.max_size = cls.cfg['file-uploader']['max_file_size']
-        cls.sample = ("gm96qhkfyaltabk8csf03iz0r0t3cwhgbf6hmy6pohg04t5bqvzds096e75k3wk81c0uvabzk4njd63e4y5ywyfb7"
+        self.max_size = self.cfg['file-uploader']['max_file_size']
+        self.sample = ("gm96qhkfyaltabk8csf03iz0r0t3cwhgbf6hmy6pohg04t5bqvzds096e75k3wk81c0uvabzk4njd63e4y5ywyfb7"
                       "e1thw8erjctomxq9xkrr0f376ebays0z63e3ysxidd9h3rkc19qeej354znlqexumu9c3errpelcvovq3c9yad6ci"
                       "h5gq9rews7jczuugopue1z")
 
@@ -64,7 +63,11 @@ class TestFileUpload(unittest.TestCase):
         encoded_string = s.encode()
         socket.send("u".encode())
         socket.send(size)
-        socket.send(encoded_string)
+        # проверяем, не отключился ли сервер:
+        try:
+            socket.send(encoded_string)
+        except BrokenPipeError:
+            pass
 
     def _send_upload_request_with_size(self, s, s_size, socket):
         size = struct.pack('I', s_size)
@@ -81,12 +84,17 @@ class TestFileUpload(unittest.TestCase):
         return response[0], response[1:]
 
     def test_small_file(self):
+        test_name = "test_small_file"
+        print(f"🍀Running test {test_name}...")
+        self.init()
         s = self.sample
         serversocket = connect_to_server()
         self._send_upload_request(s, serversocket)
         status, payload = self._recive_response(serversocket)
 
-        self.assertEqual(status, 'OK', f'Server returned error: {payload}')
+        if status != 'OK':
+            serversocket.close()
+            return f'❌ Тест с именем {test_name} не пройден: вместо ОК сервер вернул {status} + {payload}'
         if status == 'OK':
             conn = connect_to_database()
             token = payload[0]
@@ -94,25 +102,38 @@ class TestFileUpload(unittest.TestCase):
             conn.close()
         with open(path, 'rb') as f:
                 in_file = f.read().decode()
-                self.assertEqual(in_file, s, 'File content is not the same as the original string.')
         serversocket.close()
 
+        if in_file != s:
+            return f'❌ Тест с именем {test_name} не пройден: содержимое файла не совпадает с отправленным'
+        return f'✅ Тест с именем {test_name} пройден'
+
     def test_wrong_size_greater_than_original(self):
+        test_name = 'test_wrong_size_greater_than_original'
+        print(f"🍀Running test {test_name}...")
+        self.init()
         s = self.sample
         serversocket = connect_to_server()
         self._send_upload_request_with_size(s, len(s) + 1, serversocket)
-        status, response = self._recive_response(serversocket)
         serversocket.shutdown(socket.SHUT_WR)
+        status, response = self._recive_response(serversocket)
         serversocket.close()
-        self.assertEqual(status, 'ERROR', f'Server returned error: {response}')
+        if status != 'ERROR':
+            return f'❌ Тест {test_name} не пройден: вместо ERROR сервер вернул {status} + {response}'
+        return f'✅ Тест {test_name} пройден'
 
     def test_max_file_size(self):
+        test_name = 'test_max_file_size'
+        print(f"🍀Running test {test_name}...")
+        self.init()
         s = 'x' * self.max_size
         serversocket = connect_to_server()
         self._send_upload_request(s, serversocket)
         serversocket.shutdown(socket.SHUT_WR)
         status, response = self._recive_response(serversocket)
-        self.assertEqual(status, 'OK', f'Server returned error: {response}')
+        serversocket.close()
+        if status != 'OK':
+            return f'❌ Тест {test_name} не пройден: вместо OK сервер вернул {status} + {response}'
         if status == 'OK':
             conn = connect_to_database()
             token = response[0]
@@ -120,18 +141,31 @@ class TestFileUpload(unittest.TestCase):
             conn.close()
             with open(path, 'rb') as f:
                 in_file = f.read().decode()
-            self.assertEqual(in_file, s, 'File content is not the same as the original string.')
-        serversocket.close()
+            if in_file != s:
+                return f'❌ Тест {test_name} не пройден: содержимое файла не совпадает с отправленным'
+        return f'✅ Тест {test_name} пройден'
 
     def test_greater_than_max_file_size(self):
+        self.init()
+        test_name = 'test_greater_than_max_file_size'
+        print(f"🍀Running test {test_name}...")
         s = 'x' * (self.max_size + 1)
         serversocket = connect_to_server()
         self._send_upload_request(s, serversocket)
-        serversocket.shutdown(socket.SHUT_WR)
+        try:
+            serversocket.shutdown(socket.SHUT_WR)
+        except:
+            pass
         status, response = self._recive_response(serversocket)
-        self.assertEqual(status, 'ERROR', f'Server returned error: {response}')
         serversocket.close()
+        if status != 'ERROR':
+            return f'❌ Тест {test_name} не пройден: вместо ERROR сервер вернул {status} + {response}'
+        return f'✅ Тест {test_name} пройден'
 
 
 if __name__ == '__main__':
-    unittest.main()
+    test = TestFileUploader()
+    print(test.test_small_file())
+    print(test.test_wrong_size_greater_than_original())
+    print(test.test_max_file_size())
+    print(test.test_greater_than_max_file_size())

@@ -39,12 +39,12 @@ bool Server::FileUploadHandler::read_file_size() {
 
     if (file_size <= 0) {
         response = "ERROR|Bad input. File size must be positive.";
-        throw BadInputException("Размер файла не может быть отрицательным или равным нулю.");
+        return false;
     }
 
     if (file_size > max_file_size && max_file_size != -1) {
         response = "ERROR|Bad input. File size must be less than " + std::to_string(max_file_size) + " bytes.";
-        throw BadInputException("Размер файла превышает максимально допустимый размер.");
+        return false;
     }
 
     state = State::FILE_CONTENT;

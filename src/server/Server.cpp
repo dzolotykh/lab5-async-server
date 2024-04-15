@@ -70,6 +70,7 @@ std::string get_ip(socket_t socket) {
  * В конце функция возвращает вектор c новыми подключениями.
  */
 std::vector<socket_t> Server::process_listener(pollfd listener) {
+
     std::vector<socket_t> result;
 
     if (listener.revents & POLLERR) {
@@ -140,8 +141,9 @@ void Server::start() {
             } catch (std::exception &e) {
                 use_logger("Ошибка при обработке клиента: " + std::string(e.what()));
                 send(connections[i], "ERROR|Internal server error.", 27, MSG_NOSIGNAL);
-                shutdown(connections[i], SHUT_RDWR);
-                close(connections[i]);
+                socket_t client = connections[i];
+                shutdown(client, SHUT_RDWR);
+                close(client);
                 client_handlers.erase(connections[i]);
                 connections[i] = -1;
             }

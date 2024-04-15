@@ -17,6 +17,7 @@
 #include "PollingWrapper.h"
 #include "handlers/FileUploadHandler.h"
 #include "typenames.h"
+#include <thread>
 
 namespace Server {
 class Server {
