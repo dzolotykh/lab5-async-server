@@ -16,19 +16,18 @@ class ResultRequestHandler : public AbstractHandler {
 
    private:
     socket_t client;
-    std::array<char, 32> buff;
-    size_t bytes_read = 0;
+    std::vector<char> buff;
     Database::ConnectionPool& pool;
-    std::string generation_token;
     std::string response;
+    std::function<bool()> token_reader;
 
-    bool read_token();
-    bool save_request_to_db();
+    std::string save_request_to_db();
+
+
     constexpr static const char* token_query =
         "SELECT requests.id, token, input_path, name FROM requests INNER JOIN status ON status.id "
         "= status_id WHERE token = $1;";
 
-    enum class State { ERROR, READING_TOKEN, PROCESSING, FINISHED } state = State::READING_TOKEN;
 };
 }    // namespace Server
 

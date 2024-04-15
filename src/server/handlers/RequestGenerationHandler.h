@@ -22,7 +22,7 @@ class RequestGenerationHandler : public AbstractHandler {
     constexpr static const char* input_data_token_query = "select * from files where token=$1";
     constexpr static const char* input_data_query =
         "insert into requests(token, input_path, status_id) values($1, $2, 0)";
-    constexpr static const char* check_token_query = "select * from files where token=$1";
+    constexpr static const char* check_token_query = "select * from requests where token=$1";
 };
 }    // namespace Server
 
