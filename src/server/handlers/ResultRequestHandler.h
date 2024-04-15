@@ -23,11 +23,9 @@ class ResultRequestHandler : public AbstractHandler {
 
     std::string save_request_to_db();
 
-
     constexpr static const char* token_query =
         "SELECT requests.id, token, input_path, name FROM requests INNER JOIN status ON status.id "
         "= status_id WHERE token = $1;";
-
 };
 }    // namespace Server
 

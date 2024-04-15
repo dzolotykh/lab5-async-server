@@ -10,14 +10,14 @@ void Server::FileUploadHandler::generate_filename() {
 #include <utility>
 
 Server::FileUploadHandler::FileUploadHandler(socket_t client, Database::ConnectionPool& _pool,
-                                             std::filesystem::path _save_path, int32_t _max_file_size)
+                                             std::filesystem::path _save_path,
+                                             int32_t _max_file_size)
     : client(client),
       pool(_pool),
       file_size(0),
       save_path(std::move(_save_path)),
       token(StringUtils::random_string(32)),
-    max_file_size(_max_file_size)
-      {
+      max_file_size(_max_file_size) {
     std::filesystem::current_path(save_path);
     generate_filename();
 }
@@ -43,7 +43,8 @@ bool Server::FileUploadHandler::read_file_size() {
     }
 
     if (file_size > max_file_size && max_file_size != -1) {
-        response = "ERROR|Bad input. File size must be less than " + std::to_string(max_file_size) + " bytes.";
+        response = "ERROR|Bad input. File size must be less than " + std::to_string(max_file_size) +
+                   " bytes.";
         return false;
     }
 

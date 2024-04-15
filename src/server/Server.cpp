@@ -20,6 +20,7 @@ std::string Server::start_message() const {
           << "\n";
     hello << "⚡️ Максимальное количество одновременно работающих процессов: "
           << params.working_threads << "\n";
+    hello << "⚡️ Количество подключений в пуле: " << conne << "\n";
     return hello.str();
 }
 
@@ -111,7 +112,7 @@ bool Server::process_client(pollfd fd, socket_t client) {
     return client_handlers[client]->operator()();
 }
 
-std::string prepare_response(const std::string& response) {
+std::string prepare_response(const std::string &response) {
     int32_t response_size = response.size();
     std::string response_size_str(reinterpret_cast<char *>(&response_size), sizeof(response_size));
     response_size_str += response;
@@ -125,9 +126,9 @@ void Server::process_all_clients(pollfds_iter pollfds_begin, pollfds_iter pollfd
     }
     auto pollfd_i = pollfds_begin;
     auto socket_i = sockets_begin;
-    for (;pollfd_i != pollfds_end; pollfd_i++, socket_i++) {
-        socket_t& client = *socket_i;
-        pollfd& fd = *pollfd_i;
+    for (; pollfd_i != pollfds_end; pollfd_i++, socket_i++) {
+        socket_t &client = *socket_i;
+        pollfd &fd = *pollfd_i;
         try {
             if (!process_client(fd, client)) {
                 auto response = client_handlers[client]->get_response();
@@ -163,11 +164,13 @@ void Server::start() {
         auto new_connections = process_listener(pollfds.back());
         // Обрабатываем все старые подключения
 
-        size_t clients_per_thread = (connections.size() + params.working_threads - 1)  / params.working_threads;
+        size_t clients_per_thread =
+            (connections.size() + params.working_threads - 1) / params.working_threads;
 
         for (size_t i = 0; i + 1 < pollfds.size(); i += clients_per_thread) {
             auto connections_begin = connections.begin() + i;
-            auto connections_end = std::min(connections_begin + clients_per_thread, connections.end() - 1);
+            auto connections_end =
+                std::min(connections_begin + clients_per_thread, connections.end() - 1);
             auto pollfds_begin = pollfds.begin() + i;
             auto pollfds_end = std::min(pollfds_begin + clients_per_thread, pollfds.end() - 1);
             pool.add_task([this, connections_begin, connections_end, pollfds_begin, pollfds_end]() {

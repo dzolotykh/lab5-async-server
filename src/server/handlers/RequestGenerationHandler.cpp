@@ -2,7 +2,11 @@
 
 Server::RequestGenerationHandler::RequestGenerationHandler(Server::socket_t _client,
                                                            Database::ConnectionPool &_pool)
-    : client(_client), pool(_pool), buff(32), token_reader(AbstractHandler::read_bytes_nonblock(_client, 32, buff.data(), 32, [](size_t){})){}
+    : client(_client),
+      pool(_pool),
+      buff(32),
+      token_reader(
+          AbstractHandler::read_bytes_nonblock(_client, 32, buff.data(), 32, [](size_t) {})) {}
 
 std::string Server::RequestGenerationHandler::get_response() {
     return response;

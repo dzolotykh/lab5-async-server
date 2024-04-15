@@ -31,10 +31,11 @@ Json::Value config;
 void run_server(Server::Server& serv, Database::ConnectionPool& pool) {
     serv.add_endpoint('u', [&pool](Server::socket_t client) {
         return std::make_unique<Server::FileUploadHandler>(
-            client, pool, config["file-uploader"]["upload_dir"].asString(), config["file-uploader"]["max_file_size"].asInt());
+            client, pool, config["file-uploader"]["upload_dir"].asString(),
+            config["file-uploader"]["max_file_size"].asInt());
     });
 
-    serv.add_endpoint('g', [&pool](Server::socket_t client) {
+    serv.add_endpoint('r', [&pool](Server::socket_t client) {
         return std::make_unique<Server::ResultRequestHandler>(client, pool);
     });
 
@@ -42,7 +43,7 @@ void run_server(Server::Server& serv, Database::ConnectionPool& pool) {
         return std::make_unique<Server::FileDownloadHandler>(client, pool);
     });
 
-    serv.add_endpoint('r', [&pool](Server::socket_t client) {
+    serv.add_endpoint('g', [&pool](Server::socket_t client) {
         return std::make_unique<Server::RequestGenerationHandler>(client, pool);
     });
 

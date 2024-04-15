@@ -8,14 +8,14 @@
 
 namespace Server {
 class AbstractHandler {
-public:
+   public:
     virtual bool operator()() = 0;
 
     virtual std::string get_response() = 0;
 
     virtual ~AbstractHandler() = default;
 
-protected:
+   protected:
     /// \brief Чтение определенного количества байт из сокета.
     /// Функция принудительно читает все байты, пока сокет доступен.
     /// \param bytes Количество байт, которое нужно прочитать.
@@ -47,12 +47,13 @@ protected:
     // На вход необходимо подать сокет, куда будет производиться запись, количество байт, которое необходимо записать суммарно,
     // и функцию, которая будет предоставлять байты для записи в сокет.
     static std::function<bool()> write_bytes_nonblock(
-            int client_socket, size_t need_write,
-            const std::function<std::pair<const char *, size_t>()> &get_bytes);
+        int client_socket, size_t need_write,
+        const std::function<std::pair<const char *, size_t>()> &get_bytes);
 
-private:
-    static std::function<bool()> construct_writer(int client_socket, size_t need_write,
-                                         const std::function<std::pair<const char *, size_t>()> &get_bytes);
+   private:
+    static std::function<bool()> construct_writer(
+        int client_socket, size_t need_write,
+        const std::function<std::pair<const char *, size_t>()> &get_bytes);
 };
 }    // namespace Server
 

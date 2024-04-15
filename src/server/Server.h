@@ -13,13 +13,12 @@
 #include <sstream>
 #include <unordered_map>
 
-
+#include <Pool.h>
+#include <thread>
 #include "Params.h"
 #include "PollingWrapper.h"
 #include "handlers/FileUploadHandler.h"
 #include "typenames.h"
-#include <thread>
-#include <Pool.h>
 
 namespace Server {
 class Server {
@@ -57,7 +56,8 @@ class Server {
 
     using pollfds_iter = std::vector<pollfd>::iterator;
     using sockets_iter = std::vector<socket_t>::iterator;
-    void process_all_clients(pollfds_iter pollfds_begin, pollfds_iter pollfds_end, sockets_iter sockets_begin, sockets_iter sockets_end);
+    void process_all_clients(pollfds_iter pollfds_begin, pollfds_iter pollfds_end,
+                             sockets_iter sockets_begin, sockets_iter sockets_end);
 
     Params params;
     socket_t listener_socket;
@@ -72,7 +72,7 @@ class Server {
     std::unordered_map<socket_t, bool> client_status;
 
     std::unordered_map<char, handler_provider_t> endpoints;
-    constexpr static const char* INTERNAL_ERROR_TEXT = "ERROR|Internal server error.";
+    constexpr static const char *INTERNAL_ERROR_TEXT = "ERROR|Internal server error.";
 };
 }    // namespace Server
 

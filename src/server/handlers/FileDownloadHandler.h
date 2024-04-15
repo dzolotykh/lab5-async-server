@@ -19,22 +19,18 @@ class FileDownloadHandler : public AbstractHandler {
     bool operator()() override;
     std::string get_response() override;
 
-    class FileNotFoundException: public NotFoundException {
-    public:
-        explicit FileNotFoundException(const std::string& message): NotFoundException(message) {}
+    class FileNotFoundException : public NotFoundException {
+       public:
+        explicit FileNotFoundException(const std::string& message) : NotFoundException(message) {}
     };
 
-    class TokenNotFoundException: public NotFoundException {
-    public:
-        explicit TokenNotFoundException(const std::string& message): NotFoundException(message) {}
+    class TokenNotFoundException : public NotFoundException {
+       public:
+        explicit TokenNotFoundException(const std::string& message) : NotFoundException(message) {}
     };
 
    private:
-    enum class State {
-        TOKEN,
-        FILE,
-        FINISHED
-    } state = State::TOKEN;
+    enum class State { TOKEN, FILE, FINISHED } state = State::TOKEN;
 
     Database::ConnectionPool& pool;
     socket_t client;

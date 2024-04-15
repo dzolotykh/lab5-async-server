@@ -1,9 +1,12 @@
 #include "ResultRequestHandler.h"
 
 Server::ResultRequestHandler::ResultRequestHandler(Server::socket_t _client,
-                                                   Database::ConnectionPool &_pool)
-    : pool(_pool), client(_client), buff(32),
-    token_reader(AbstractHandler::read_bytes_nonblock(_client, 32, buff.data(), 32, [](size_t){})) {}
+                                                   Database::ConnectionPool& _pool)
+    : pool(_pool),
+      client(_client),
+      buff(32),
+      token_reader(
+          AbstractHandler::read_bytes_nonblock(_client, 32, buff.data(), 32, [](size_t) {})) {}
 
 std::string Server::ResultRequestHandler::save_request_to_db() {
     auto conn = pool.get_connection();

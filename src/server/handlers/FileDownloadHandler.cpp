@@ -27,7 +27,6 @@ bool Server::FileDownloadHandler::operator()() {
             auto bytes_provider = [path = filepath, size = file_size, bytes_provided = (size_t)0,
                                    buff = write_buffer.data(), buff_size = write_buffer.size(),
                                    pref = std::string()]() mutable {
-
                 // заранее откроем файл, чтобы не возвращать OK если он не открылся
                 std::ifstream file(path, std::ios::binary);
                 if (!file.is_open()) {
