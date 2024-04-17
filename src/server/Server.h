@@ -1,8 +1,6 @@
 #ifndef LAB5_SERVER_H
 #define LAB5_SERVER_H
 
-#include <iostream>    // for debugging
-
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -13,11 +11,10 @@
 #include <sstream>
 #include <unordered_map>
 
-#include <Pool.h>
+#include "thread-pool/Pool.h"
 #include <thread>
 #include "Params.h"
 #include "PollingWrapper.h"
-#include "handlers/FileUploadHandler.h"
 #include "typenames.h"
 
 namespace Server {
