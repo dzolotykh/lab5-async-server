@@ -5,7 +5,7 @@
 
 class EchoHandler: public Server::AbstractHandler {
 public:
-    explicit EchoHandler(Server::socket_t _client): client(_client) {
+    EchoHandler(Server::socket_t _client): client(_client) {
         reader = Server::AbstractHandler::read_bytes_nonblock(client, buff.data(), buff.size(), [this](size_t read){
             written_in_buffer = read;
         });
