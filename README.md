@@ -90,5 +90,4 @@ int main() {
     serv.add_endpoint<EchoHandler>('e');
     serv.start();
 }
-
 ```
