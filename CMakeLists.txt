@@ -1,38 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
-project(lab5)
+set(CMAKE_CXX_STANDARD 20)
 
-set(CMAKE_CXX_STANDARD 17)
+project(async-server-example)
 
-set(CMAKE_SOURCE_DIR build)
+add_subdirectory(src)
 
-include_directories(src/libs/thread-pool)
-add_subdirectory(src/libs/thread-pool)
+add_executable(async-server-example main.cpp)
 
-include_directories(src/libs/graph-bmp-generator)
-add_subdirectory(src/libs/graph-bmp-generator)
+target_link_libraries(async-server-example async-server)
 
-include_directories(src/database)
-include_directories(src/server/handlers)
-include_directories(src/utils)
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-find_package(libpqxx REQUIRED)
-find_package(jsoncpp REQUIRED)
-find_package(GTest REQUIRED)
-
-add_executable(main main.cpp
-        src/server/Server.cpp
-        src/server/Socket.cpp
-        src/server/PollingWrapper.cpp
-        src/server/handlers/FileUploadHandler.cpp
-        src/database/ConnectionPool.cpp
-        src/server/handlers/EndpointHandler.cpp
-        src/server/handlers/ResultRequestHandler.cpp
-        src/server/handlers/FileDownloadHandler.cpp
-        src/server/handlers/AbstractHandler.cpp
-        src/server/handlers/RequestGenerationHandler.cpp
-        src/utils/StringUtils.cpp
-)
-
-target_link_libraries(main thread-pool graph-bmp-generator libpqxx::pqxx JsonCpp::JsonCpp GTest::GTest)

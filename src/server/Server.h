@@ -1,8 +1,6 @@
 #ifndef LAB5_SERVER_H
 #define LAB5_SERVER_H
 
-#include <iostream>    // for debugging
-
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -13,11 +11,10 @@
 #include <sstream>
 #include <unordered_map>
 
-#include <Pool.h>
+#include "thread-pool/Pool.h"
 #include <thread>
 #include "Params.h"
 #include "PollingWrapper.h"
-#include "handlers/FileUploadHandler.h"
 #include "typenames.h"
 
 namespace Server {
@@ -37,7 +34,12 @@ class Server {
 
     void start();
 
-    void add_endpoint(char name, handler_provider_t handler_provider);
+    template<typename handler_t, typename... handler_constructor_params_t>
+    void add_endpoint(char name, handler_constructor_params_t&... constructor_params) {
+        endpoints[name] = [&constructor_params...](socket_t client) {
+            return std::make_unique<handler_t>(client, constructor_params...);
+        };
+    }
 
     void stop();
 

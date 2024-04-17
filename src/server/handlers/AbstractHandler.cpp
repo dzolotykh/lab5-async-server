@@ -1,36 +1,4 @@
 #include "AbstractHandler.h"
-#include <iostream>
-
-void Server::AbstractHandler::read_bytes(int client_socket, size_t bytes, char* dst) {
-    size_t bytes_read = 0;
-    while (bytes_read < bytes) {
-        ssize_t read = recv(client_socket, dst + bytes_read, bytes - bytes_read, MSG_DONTWAIT);
-        if (read == -1 && errno != EAGAIN) {
-            throw SocketException("Ошибка при чтении данных из сокета.");
-        } else if (read == -1) {
-            continue;
-        } else if (read == 0) {
-            throw BadInputException("Клиент отключился.");
-        }
-        bytes_read += read;
-    }
-}
-
-void Server::AbstractHandler::write_bytes(int client_socket, size_t bytes, const char* src) {
-    size_t bytes_written = 0;
-    while (bytes_written < bytes) {
-        ssize_t written =
-            send(client_socket, src + bytes_written, bytes - bytes_written, MSG_NOSIGNAL);
-        if (written == -1 && errno != EAGAIN) {
-            throw SocketException("Ошибка при записи данных в сокет.");
-        } else if (written == 0) {
-            throw BadInputException("Клиент отключился.");
-        }
-        bytes_written += written;
-    }
-}
-
-#include <iostream>
 
 std::function<bool()> Server::AbstractHandler::read_bytes_nonblock(
     int client_socket, size_t need_read, char* dst, size_t buff_size,
@@ -95,4 +63,22 @@ std::function<bool()> Server::AbstractHandler::write_bytes_nonblock(
     int client_socket, size_t need_write,
     const std::function<std::pair<const char*, size_t>()>& get_bytes) {
     return construct_writer(client_socket, need_write, get_bytes);
+}
+
+std::function<bool()> Server::AbstractHandler::read_bytes_nonblock(int client_socket, char *dst, size_t buff_size,
+                                                                   const std::function<void(size_t)> &on_read) {
+    return [client_socket, dst, buff_size, on_read]() mutable {
+        ssize_t read = recv(client_socket, dst, buff_size, MSG_DONTWAIT);
+
+        if (read == -1 && errno != EAGAIN) {
+            throw SocketException("Ошибка при чтении данных из сокета.");
+        } else if (read == -1) {
+            return true;
+        } else if (read == 0) {
+            return false;
+        }
+        on_read(read);
+
+        return true;
+    };
 }
