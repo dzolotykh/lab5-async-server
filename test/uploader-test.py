@@ -4,6 +4,7 @@ import struct
 import socket
 import json
 import psycopg2
+from dotenv import load_dotenv
 
 def get_env_var(name):
     try:
@@ -164,6 +165,7 @@ class TestFileUploader:
 
 
 if __name__ == '__main__':
+    load_dotenv()
     test = TestFileUploader()
     print(test.test_small_file())
     print(test.test_wrong_size_greater_than_original())

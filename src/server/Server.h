@@ -37,7 +37,12 @@ class Server {
 
     void start();
 
-    void add_endpoint(char name, handler_provider_t handler_provider);
+    template<typename handler_t, typename... handler_constructor_params_t>
+    void add_endpoint(char name, handler_constructor_params_t&... constructor_params) {
+        endpoints[name] = [&constructor_params...](socket_t client) {
+            return std::make_unique<handler_t>(client, constructor_params...);
+        };
+    }
 
     void stop();
 

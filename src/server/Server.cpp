@@ -188,16 +188,6 @@ void Server::start() {
     }
 }
 
-/// \brief Добавляет обработчик для конечной точки.
-/// \param name Имя конечной точки.
-/// \param handler Функция, возвращающая обработчик для данной конечной точки.
-/// На вход в эту функцию будет подаваться сокет клиента. Ожидается, что внутри она будет
-/// создавать объект обработчика с необходимыми параметрами и возвращать его.
-/// \note В случае, если обработчик с таким именем уже существует, он будет заменен.
-void Server::add_endpoint(char name, handler_provider_t handler) {
-    endpoints[name] = std::move(handler);
-}
-
 void Server::stop() {
     close(listener_socket);
     is_running = false;

@@ -29,23 +29,13 @@ Json::Value config;
 /// надо передать символ эндпоинта и функцию, которая будет порождать нам обработчик.
 
 void run_server(Server::Server& serv, Database::ConnectionPool& pool) {
-    serv.add_endpoint('u', [&pool](Server::socket_t client) {
-        return std::make_unique<Server::FileUploadHandler>(
-            client, pool, config["file-uploader"]["upload_dir"].asString(),
-            config["file-uploader"]["max_file_size"].asInt());
-    });
+    std::string upload_dir = config["file-uploader"]["upload_dir"].asString();
+    int max_size = config["file-uploader"]["max_file_size"].asInt();
 
-    serv.add_endpoint('r', [&pool](Server::socket_t client) {
-        return std::make_unique<Server::ResultRequestHandler>(client, pool);
-    });
-
-    serv.add_endpoint('d', [&pool](Server::socket_t client) {
-        return std::make_unique<Server::FileDownloadHandler>(client, pool);
-    });
-
-    serv.add_endpoint('g', [&pool](Server::socket_t client) {
-        return std::make_unique<Server::RequestGenerationHandler>(client, pool);
-    });
+    serv.add_endpoint<Server::FileUploadHandler>('u', pool, upload_dir, max_size);
+    serv.add_endpoint<Server::ResultRequestHandler>('r', pool);
+    serv.add_endpoint<Server::FileDownloadHandler>('d', pool);
+    serv.add_endpoint<Server::RequestGenerationHandler>('g', pool);
 
     serv.start();
 }

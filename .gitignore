@@ -5,3 +5,4 @@ build
 CMakeUserPresets.json
 uploads
 .DS_Store
+.env
