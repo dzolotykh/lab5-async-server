@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <sstream>
 #include <unordered_map>
+#include <chrono>
 
 #include "thread-pool/Pool.h"
 #include <thread>
@@ -41,7 +42,12 @@ class Server {
         };
     }
 
+    /// Принудительно выключает сервер.
+    /// Самый грубый способ завершения, поэтому лучше использовать только в крайнем случае
     void stop();
+
+    /// Принудительно выключает сервер после определенного таймаута.
+    void stop(std::chrono::milliseconds timeout);
 
    private:
     [[nodiscard]] std::string start_message() const;
@@ -74,6 +80,8 @@ class Server {
     std::unordered_map<socket_t, bool> client_status;
 
     std::unordered_map<char, handler_provider_t> endpoints;
+    std::vector<socket_t> sockets_in_usage;
+
     constexpr static const char *INTERNAL_ERROR_TEXT = "ERROR|Internal server error.";
 };
 }    // namespace Server

@@ -74,7 +74,10 @@ std::vector<socket_t> Server::process_listener(pollfd listener) {
     std::vector<socket_t> result;
 
     if (listener.revents & POLLERR) {
-        throw std::runtime_error(ERROR_POLL_LISTENER + std::to_string(POLLERR));
+        if (!is_running)
+            throw std::runtime_error(ERROR_POLL_LISTENER + std::to_string(POLLERR));
+        else
+            return {};
     }
 
     sockaddr_in peer{};
@@ -189,9 +192,15 @@ void Server::start() {
 }
 
 void Server::stop() {
-    close(listener_socket);
     is_running = false;
 }
 
-Server::~Server() = default;
+Server::~Server() {
+    stop();
+}
+
+void Server::stop(std::chrono::milliseconds timeout) {
+    is_running = false;
+    std::this_thread::sleep_for(timeout);
+}
 }    // namespace Server
