@@ -25,36 +25,6 @@ std::string Server::start_message() const {
 
 Server::Server(Params _params) : params(std::move(_params)), pool(params.working_threads), listener_socket() {}
 
-void Server::set_nonblock(const Socket& socket) {
-    int status = fcntl(socket.get_fd(), F_SETFL, fcntl(socket.get_fd(), F_GETFL, 0) | O_NONBLOCK);
-    if (status < 0) {
-        throw std::runtime_error(ERROR_SET_NONBLOCK + std::to_string(errno));
-    }
-}
-
-void Server::prepare_listener_socket() {
-    sockaddr_in socket_address{};
-    socket_address.sin_family = AF_INET;
-    socket_address.sin_port = htons(params.port);
-    socket_address.sin_addr.s_addr = htonl(INADDR_ANY);
-
-    listener_socket = Socket(socket(AF_INET, SOCK_STREAM, 0));
-
-    if (listener_socket.get_fd() < 0) {
-        throw std::runtime_error(ERROR_CREATE_SOCKET + std::to_string(errno));
-    }
-
-    int bind_status = bind(listener_socket.get_fd(), (sockaddr *)&socket_address, sizeof(socket_address));
-
-    if (bind_status < 0) {
-        throw std::runtime_error(ERROR_BIND + std::to_string(errno));
-    }
-    set_nonblock(listener_socket);
-    if (listen(listener_socket.get_fd(), params.max_connections_in_queue) < 0) {
-        throw std::runtime_error(ERROR_LISTEN + std::to_string(errno));
-    }
-}
-
 std::string get_ip(const Socket& socket) {
     auto fd = socket.get_fd();
     auto *pV4Addr = (sockaddr_in *)&fd;
@@ -97,7 +67,7 @@ void Server::process_listener(pollfd listener) {
         };
         client_handlers[client.get_fd()] = std::make_unique<EndpointHandler>(endpoints, client, changer);
         client_status[client.get_fd()] = true;
-        set_nonblock(client);
+        client.set_attribute(Socket::attributes::NONBLOCK);
         use_logger("Создано подключение для нового клиента. IP: " + get_ip(client) + "Socket: " + std::to_string(client.get_fd()));
     }
 }
@@ -167,7 +137,8 @@ std::vector<pollfd> Server::generate_pollfds() {
 }
 
 void Server::start() {
-    prepare_listener_socket();
+    listener_socket = Socket::create_listener_socket(params.port, params.max_connections_in_queue);
+    listener_socket.set_attribute(Socket::attributes::NONBLOCK);
     use_logger(start_message());
 
     while (is_running) {

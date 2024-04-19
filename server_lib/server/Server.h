@@ -11,7 +11,7 @@
 #include <sstream>
 #include <unordered_map>
 #include <chrono>
-#include <Socket.h>
+#include "../socket/Socket.h"
 
 #include "thread-pool/Pool.h"
 #include <thread>
@@ -52,11 +52,7 @@ class Server {
    private:
     [[nodiscard]] std::string start_message() const;
 
-    void prepare_listener_socket();
-
     void use_logger(const std::string &message);
-
-    static void set_nonblock(const Socket& socket);
 
     void process_listener(pollfd listener);
 

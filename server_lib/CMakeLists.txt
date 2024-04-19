@@ -5,7 +5,8 @@ set(SOURCE_FILES server/Server.cpp
                  server/handlers/AbstractHandler.cpp
                  server/handlers/EndpointHandler.cpp
                  server/thread-pool/Pool.cpp
-                 server/Socket.cpp
+        socket/Socket.cpp
+        socket/SocketException.cpp
 )
 
 add_library(async-server STATIC ${SOURCE_FILES})
