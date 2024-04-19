@@ -1,10 +1,4 @@
 #include "Server.h"
-#include <sys/poll.h>
-#include <stdexcept>
-#include <utility>
-#include "Exceptions.h"
-#include "handlers/EndpointHandler.h"
-#include "log.h"
 
 namespace Server {
 void Server::use_logger(const std::string &message) {
@@ -53,7 +47,7 @@ void Server::process_listener(pollfd listener) {
 
     while (true) {
         clients.emplace_back(std::make_unique<Socket>(accept(listener_socket.get_fd(), (sockaddr *)&peer, &peer_size)));
-        const Socket& client = *clients.back();
+        Socket& client = *clients.back();
         if (client.get_fd() < 0) {
             clients.pop_back();
             if (errno == EWOULDBLOCK) {

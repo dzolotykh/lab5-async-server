@@ -1,7 +1,7 @@
 #include "EchoHandler.h"
 
  EchoHandler::EchoHandler(const Server::Socket& _client) : client(_client) {
-    reader = Server::AbstractHandler::read_bytes_nonblock(client, buff.data(), buff.size(), [this](size_t read){
+    reader = client.read_bytes_nonblock(buff.data(), buff.size(), [this](size_t read){
         written_in_buffer = read;
     });
     writer = Server::AbstractHandler::write_bytes_nonblock(client, 0, [this](){

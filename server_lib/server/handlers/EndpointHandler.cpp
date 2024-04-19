@@ -3,10 +3,8 @@
 #include <iostream>
 
 bool Server::EndpointHandler::operator()() {
-
     if (reader == nullptr) {
-        reader = read_bytes_nonblock(client, sizeof(endpoint), &endpoint, sizeof(endpoint),
-                                     [this](size_t) {});
+        reader = client.read_bytes_nonblock(sizeof(endpoint), &endpoint, sizeof(endpoint), [](size_t) {});
     }
 
     if (!reader()) {

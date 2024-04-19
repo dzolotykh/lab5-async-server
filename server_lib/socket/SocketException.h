@@ -14,6 +14,11 @@ namespace Server {
     private:
         std::string message;
     };
+
+    class ClientDisconnectedException : public SocketException {
+    public:
+        explicit ClientDisconnectedException(std::string message);
+    };
 }
 
 

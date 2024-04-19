@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 set(CMAKE_CXX_STANDARD 20)
 
+
 set(SOURCE_FILES server/Server.cpp
                  server/handlers/AbstractHandler.cpp
                  server/handlers/EndpointHandler.cpp
@@ -12,4 +13,4 @@ set(SOURCE_FILES server/Server.cpp
 add_library(async-server STATIC ${SOURCE_FILES})
 
 
-target_include_directories(async-server PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/server)
+target_include_directories(async-server PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/server ${CMAKE_CURRENT_SOURCE_DIR}/socket)
