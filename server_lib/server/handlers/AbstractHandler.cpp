@@ -1,10 +1,10 @@
 #include "AbstractHandler.h"
 
 std::function<bool()> Server::AbstractHandler::read_bytes_nonblock(
-    int client_socket, size_t need_read, char* dst, size_t buff_size,
+    const Socket& client_socket, size_t need_read, char* dst, size_t buff_size,
     const std::function<void(size_t)>& on_read) {
     size_t bytes_read = 0;
-    return [client_socket, need_read, dst, buff_size, bytes_read, on_read]() mutable {
+    return [client_socket = client_socket.get_fd(), need_read, dst, buff_size, bytes_read, on_read]() mutable {
         if (bytes_read < need_read) {
             size_t want_read = std::min(need_read - bytes_read, buff_size);
             ssize_t read = recv(client_socket, dst, want_read, MSG_DONTWAIT);
@@ -23,7 +23,7 @@ std::function<bool()> Server::AbstractHandler::read_bytes_nonblock(
 }
 
 std::function<bool()> Server::AbstractHandler::construct_writer(
-    int client_socket, size_t need_write,
+    Socket::fd client_socket, size_t need_write,
     const std::function<std::pair<const char*, size_t>()>& get_bytes) {
     size_t src_size = 0;
     const char* src = nullptr;
@@ -60,14 +60,14 @@ std::function<bool()> Server::AbstractHandler::construct_writer(
 }
 
 std::function<bool()> Server::AbstractHandler::write_bytes_nonblock(
-    int client_socket, size_t need_write,
+    const Socket& client_socket, size_t need_write,
     const std::function<std::pair<const char*, size_t>()>& get_bytes) {
-    return construct_writer(client_socket, need_write, get_bytes);
+    return construct_writer(client_socket.get_fd(), need_write, get_bytes);
 }
 
-std::function<bool()> Server::AbstractHandler::read_bytes_nonblock(int client_socket, char *dst, size_t buff_size,
+std::function<bool()> Server::AbstractHandler::read_bytes_nonblock(const Socket& client_socket, char *dst, size_t buff_size,
                                                                    const std::function<void(size_t)> &on_read) {
-    return [client_socket, dst, buff_size, on_read]() mutable {
+    return [client_socket = client_socket.get_fd(), dst, buff_size, on_read]() mutable {
         ssize_t read = recv(client_socket, dst, buff_size, MSG_DONTWAIT);
 
         if (read == -1 && errno != EAGAIN) {

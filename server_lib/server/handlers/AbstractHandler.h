@@ -5,6 +5,7 @@
 #include <functional>
 #include <string>
 #include "../Exceptions.h"
+#include <Socket.h>
 
 namespace Server {
 class AbstractHandler {
@@ -21,13 +22,13 @@ class AbstractHandler {
     // (то есть то, сколько байт за одну итерацию будет считано максимально), указатель на буфер, а также
     // функцию, которая будет вызываться при считывании байтов в буфер.
 
-    static std::function<bool()> read_bytes_nonblock(int client_socket, size_t need_read, char *dst,
+    static std::function<bool()> read_bytes_nonblock(const Socket& client_socket, size_t need_read, char *dst,
                                                      size_t buff_size,
                                                      const std::function<void(size_t)> &on_read);
 
     // перегрузка на случай, если необходимо считать неограниченное количество байтов.
     // Вернет false, когда пользователь отключится
-    static std::function<bool()> read_bytes_nonblock(int client_socket, char *dst,
+    static std::function<bool()> read_bytes_nonblock(const Socket& client_socket, char *dst,
                                                      size_t buff_size,
                                                      const std::function<void(size_t)> &on_read);
 
@@ -35,7 +36,7 @@ class AbstractHandler {
     // На вход необходимо подать сокет, куда будет производиться запись, количество байт, которое необходимо записать суммарно,
     // и функцию, которая будет предоставлять байты для записи в сокет.
     static std::function<bool()> write_bytes_nonblock(
-        int client_socket, size_t need_write,
+        const Socket& client_socket, size_t need_write,
         const std::function<std::pair<const char *, size_t>()> &get_bytes);
 
    private:

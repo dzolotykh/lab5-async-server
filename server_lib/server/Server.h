@@ -11,11 +11,11 @@
 #include <sstream>
 #include <unordered_map>
 #include <chrono>
+#include <Socket.h>
 
 #include "thread-pool/Pool.h"
 #include <thread>
 #include "Params.h"
-#include "PollingWrapper.h"
 #include "typenames.h"
 
 namespace Server {
@@ -37,7 +37,7 @@ class Server {
 
     template<typename handler_t, typename... handler_constructor_params_t>
     void add_endpoint(char name, handler_constructor_params_t&... constructor_params) {
-        endpoints[name] = [&constructor_params...](socket_t client) {
+        endpoints[name] = [&constructor_params...](const Socket& client) {
             return std::make_unique<handler_t>(client, constructor_params...);
         };
     }
@@ -56,31 +56,32 @@ class Server {
 
     void use_logger(const std::string &message);
 
-    static void set_nonblock(socket_t socket);
+    static void set_nonblock(const Socket& socket);
 
-    std::vector<socket_t> process_listener(pollfd listener);
+    void process_listener(pollfd listener);
 
-    bool process_client(pollfd fd, socket_t client);
+    bool process_client(pollfd fd, const Socket& client);
+
+    std::vector<pollfd> generate_pollfds();
 
     using pollfds_iter = std::vector<pollfd>::iterator;
-    using sockets_iter = std::vector<socket_t>::iterator;
+    using sockets_iter = std::vector<std::unique_ptr<Socket>>::iterator;
     void process_all_clients(pollfds_iter pollfds_begin, pollfds_iter pollfds_end,
                              sockets_iter sockets_begin, sockets_iter sockets_end);
 
     Params params;
-    socket_t listener_socket;
+    Socket listener_socket;
+    std::vector<std::unique_ptr<Socket>> clients;
     std::mutex logger_mtx;
-    PollingWrapper polling_wrapper;
     std::atomic<bool> is_running = true;
     ThreadPool::Pool pool;
 
     /* Тут будем хранить функции-обработчики для каждого клиента. Если работа с клиентом завершена,
      * то обработчик должен вернуть false. */
-    std::unordered_map<socket_t, std::unique_ptr<AbstractHandler>> client_handlers;
-    std::unordered_map<socket_t, bool> client_status;
+    std::unordered_map<Socket::fd, std::unique_ptr<AbstractHandler>> client_handlers;
+    std::unordered_map<Socket::fd, bool> client_status;
 
     std::unordered_map<char, handler_provider_t> endpoints;
-    std::vector<socket_t> sockets_in_usage;
 
     constexpr static const char *INTERNAL_ERROR_TEXT = "ERROR|Internal server error.";
 };

@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include "../typenames.h"
 #include "AbstractHandler.h"
+#include <Socket.h>
 
 namespace Server {
 
@@ -13,7 +14,7 @@ namespace Server {
 /// В рамках сервера эндпоинт задается первым байтом сообщения.
 class EndpointHandler : public AbstractHandler {
    public:
-    EndpointHandler(std::unordered_map<char, handler_provider_t>& _handlers, socket_t _client,
+    EndpointHandler(std::unordered_map<char, handler_provider_t>& _handlers, const Socket& _client,
                     changer_t _change_handler);
 
     bool operator()() override;
@@ -22,7 +23,7 @@ class EndpointHandler : public AbstractHandler {
 
    private:
     std::unordered_map<char, handler_provider_t>& handlers;
-    socket_t client;
+    const Socket& client;
     /// Функция, которая будет вызвана в случае успешного определения эндпоинта.
     changer_t change_handler;
     std::function<bool()> reader = nullptr;

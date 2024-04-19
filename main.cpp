@@ -5,7 +5,7 @@
 #include "LongRequestHandler.h"
 
 int main() {
-    const int port = 8082;
+    const int port = 8081;
     const int max_connections_in_queue = 1000;
     const int working_threads = 6;
     auto logger = [](const std::string& s) {

@@ -5,13 +5,13 @@
 
 class EchoHandler: public Server::AbstractHandler {
 public:
-    explicit EchoHandler(Server::socket_t _client);
+    explicit EchoHandler(const Server::Socket& _client);
 
     std::string get_response() final;
 
     bool operator()() final;
 private:
-    Server::socket_t client;
+    const Server::Socket& client;
     std::function<bool()> reader;
     std::function<bool()> writer;
     std::array<char, 1024> buff;

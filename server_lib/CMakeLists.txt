@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 3.20)
 set(CMAKE_CXX_STANDARD 20)
 
 set(SOURCE_FILES server/Server.cpp
-                 server/PollingWrapper.cpp
                  server/handlers/AbstractHandler.cpp
                  server/handlers/EndpointHandler.cpp
                  server/thread-pool/Pool.cpp
+                 server/Socket.cpp
 )
 
 add_library(async-server STATIC ${SOURCE_FILES})

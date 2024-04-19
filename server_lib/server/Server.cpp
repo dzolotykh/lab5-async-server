@@ -23,10 +23,10 @@ std::string Server::start_message() const {
     return hello.str();
 }
 
-Server::Server(Params _params) : params(std::move(_params)), pool(params.working_threads) {}
+Server::Server(Params _params) : params(std::move(_params)), pool(params.working_threads), listener_socket() {}
 
-void Server::set_nonblock(socket_t socket) {
-    int status = fcntl(socket, F_SETFL, fcntl(socket, F_GETFL, 0) | O_NONBLOCK);
+void Server::set_nonblock(const Socket& socket) {
+    int status = fcntl(socket.get_fd(), F_SETFL, fcntl(socket.get_fd(), F_GETFL, 0) | O_NONBLOCK);
     if (status < 0) {
         throw std::runtime_error(ERROR_SET_NONBLOCK + std::to_string(errno));
     }
@@ -38,25 +38,26 @@ void Server::prepare_listener_socket() {
     socket_address.sin_port = htons(params.port);
     socket_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    listener_socket = socket(AF_INET, SOCK_STREAM, 0);
+    listener_socket = Socket(socket(AF_INET, SOCK_STREAM, 0));
 
-    if (listener_socket < 0) {
+    if (listener_socket.get_fd() < 0) {
         throw std::runtime_error(ERROR_CREATE_SOCKET + std::to_string(errno));
     }
 
-    int bind_status = bind(listener_socket, (sockaddr *)&socket_address, sizeof(socket_address));
+    int bind_status = bind(listener_socket.get_fd(), (sockaddr *)&socket_address, sizeof(socket_address));
 
     if (bind_status < 0) {
         throw std::runtime_error(ERROR_BIND + std::to_string(errno));
     }
     set_nonblock(listener_socket);
-    if (listen(listener_socket, params.max_connections_in_queue) < 0) {
+    if (listen(listener_socket.get_fd(), params.max_connections_in_queue) < 0) {
         throw std::runtime_error(ERROR_LISTEN + std::to_string(errno));
     }
 }
 
-std::string get_ip(socket_t socket) {
-    auto *pV4Addr = (sockaddr_in *)&socket;
+std::string get_ip(const Socket& socket) {
+    auto fd = socket.get_fd();
+    auto *pV4Addr = (sockaddr_in *)&fd;
     in_addr ipAddr = pV4Addr->sin_addr;
     char str[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &ipAddr, str, INET_ADDRSTRLEN);
@@ -69,54 +70,54 @@ std::string get_ip(socket_t socket) {
  * Если произошло событие POLLIN, то функция принимает новое подключение и добавляет его в вектор result.
  * В конце функция возвращает вектор c новыми подключениями.
  */
-std::vector<socket_t> Server::process_listener(pollfd listener) {
-
-    std::vector<socket_t> result;
-
+void Server::process_listener(pollfd listener) {
     if (listener.revents & POLLERR) {
         if (!is_running)
             throw std::runtime_error(ERROR_POLL_LISTENER + std::to_string(POLLERR));
         else
-            return {};
+            return;
     }
 
     sockaddr_in peer{};
     socklen_t peer_size = sizeof(peer);
 
     while (true) {
-        socket_t channel = accept(listener_socket, (sockaddr *)&peer, &peer_size);
-        if (channel < 0) {
+        clients.emplace_back(std::make_unique<Socket>(accept(listener_socket.get_fd(), (sockaddr *)&peer, &peer_size)));
+        const Socket& client = *clients.back();
+        if (client.get_fd() < 0) {
+            clients.pop_back();
             if (errno == EWOULDBLOCK) {
                 break;
             } else {
                 throw std::runtime_error(ERROR_ACCEPT + std::to_string(errno));
             }
         }
-
-        changer_t changer = [this, channel](std::unique_ptr<AbstractHandler> handler) {
+        changer_t changer = [this, channel = client.get_fd()](std::unique_ptr<AbstractHandler> handler) {
             client_handlers[channel] = std::move(handler);
         };
-
-        client_handlers[channel] = std::make_unique<EndpointHandler>(endpoints, channel, changer);
-        client_status[channel] = true;
-
-        set_nonblock(channel);
-        result.push_back({channel});
-        use_logger("Создано подключение для нового клиента. IP: " + get_ip(channel));
+        client_handlers[client.get_fd()] = std::make_unique<EndpointHandler>(endpoints, client, changer);
+        client_status[client.get_fd()] = true;
+        set_nonblock(client);
+        use_logger("Создано подключение для нового клиента. IP: " + get_ip(client) + "Socket: " + std::to_string(client.get_fd()));
     }
-    return result;
 }
 
-bool Server::process_client(pollfd fd, socket_t client) {
+bool Server::process_client(pollfd fd, const Socket& client) {
+
     if (fd.revents & POLLERR) {
-        throw SocketException("Ошибка при работе с сокетом: " + std::to_string(client));
+        throw SocketException("Ошибка при работе с сокетом: " + std::to_string(client.get_fd()));
     }
-    return client_handlers[client]->operator()();
+
+    if (fd.revents & POLLHUP) {
+        return false;
+    }
+
+    return client_handlers[client.get_fd()]->operator()();
 }
 
 std::string prepare_response(const std::string &response) {
-    int32_t response_size = response.size();
-    std::string response_size_str(reinterpret_cast<char *>(&response_size), sizeof(response_size));
+    auto response_size = static_cast<int32_t>(response.size()); // размер ответа должен влезать в int32
+    std::string response_size_str(reinterpret_cast<char*>(&response_size), sizeof(response_size));
     response_size_str += response;
     return response_size_str;
 }
@@ -129,65 +130,75 @@ void Server::process_all_clients(pollfds_iter pollfds_begin, pollfds_iter pollfd
     auto pollfd_i = pollfds_begin;
     auto socket_i = sockets_begin;
     for (; pollfd_i != pollfds_end; pollfd_i++, socket_i++) {
-        socket_t &client = *socket_i;
+        const Socket &client = **socket_i;
         pollfd &fd = *pollfd_i;
         try {
             if (!process_client(fd, client)) {
-                auto response = client_handlers[client]->get_response();
+                auto response = client_handlers[client.get_fd()]->get_response();
                 response = prepare_response(response);
-                send(client, response.c_str(), response.size(), MSG_NOSIGNAL);
-                shutdown(client, SHUT_RDWR);
-                close(client);
-                client_handlers.erase(client);
-                use_logger("Клиент отключен: " + std::to_string(client));
-                client = -1;
+                send(client.get_fd(), response.c_str(), response.size(), MSG_NOSIGNAL);
+                client_handlers.erase(client.get_fd());
+                use_logger("Клиент отключился. IP: " + get_ip(client));
             }
         } catch (const std::exception &e) {
             use_logger("Ошибка при обработке клиента: " + std::string(e.what()));
             auto response = prepare_response(INTERNAL_ERROR_TEXT);
-            send(client, response.c_str(), response.size(), MSG_NOSIGNAL);
-            shutdown(client, SHUT_RDWR);
-            close(client);
-            client_handlers.erase(client);
-            client = -1;
+            send(client.get_fd(), response.c_str(), response.size(), MSG_NOSIGNAL);
+            client_handlers.erase(client.get_fd());
+            use_logger("Клиент отключился. IP: " + get_ip(client));
         }
     }
 }
 
+std::vector<pollfd> Server::generate_pollfds() {
+    std::vector<pollfd> pollfds;
+    for (const auto &client : clients) {
+        pollfd client_pollfd{};
+        client_pollfd.fd = client->get_fd();
+        client_pollfd.events = POLLIN | POLLERR | POLLHUP;
+        pollfds.push_back(client_pollfd);
+    }
+    pollfd listener_pollfd{};
+    listener_pollfd.fd = listener_socket.get_fd();
+    listener_pollfd.events = POLLIN;
+    pollfds.push_back(listener_pollfd);
+
+    return pollfds;
+}
+
 void Server::start() {
     prepare_listener_socket();
-    polling_wrapper = PollingWrapper(listener_socket);
     use_logger(start_message());
 
     while (is_running) {
-        auto [connections, pollfds] = polling_wrapper.get();
+        auto pollfds = generate_pollfds();
         poll(pollfds.data(), pollfds.size(), -1);
         // Проверяем, есть ли новые подключения
-        auto new_connections = process_listener(pollfds.back());
+        pollfd listener_pollfd = pollfds.back();
+        pollfds.pop_back();
+
+        process_listener(listener_pollfd);
         // Обрабатываем все старые подключения
 
-        size_t clients_per_thread =
-            (connections.size() + params.working_threads - 1) / params.working_threads;
+        size_t clients_per_thread = (clients.size() + params.working_threads - 1) / params.working_threads;
 
-        for (size_t i = 0; i + 1 < pollfds.size(); i += clients_per_thread) {
-            auto connections_begin = connections.begin() + i;
-            auto connections_end =
-                std::min(connections_begin + clients_per_thread, connections.end() - 1);
+        for (size_t i = 0; i < pollfds.size(); i += clients_per_thread) {
+            auto connections_begin = clients.begin() + i;
+            auto connections_end = std::min(connections_begin + clients_per_thread, clients.end());
             auto pollfds_begin = pollfds.begin() + i;
-            auto pollfds_end = std::min(pollfds_begin + clients_per_thread, pollfds.end() - 1);
+            auto pollfds_end = std::min(pollfds_begin + clients_per_thread, pollfds.end());
             pool.add_task([this, connections_begin, connections_end, pollfds_begin, pollfds_end]() {
                 process_all_clients(pollfds_begin, pollfds_end, connections_begin, connections_end);
             });
+
         }
 
         pool.wait_all();
 
-        // process_all_clients(pollfds.begin(), pollfds.end() - 1, connections.begin(), connections.end() - 1);
+        clients.erase(std::remove_if(clients.begin(), clients.end(), [this](const auto& elem){
+            return client_handlers.count(elem->get_fd()) == 0;
+        }), clients.end());
 
-        polling_wrapper = PollingWrapper(connections, pollfds);
-        polling_wrapper.remove_disconnected();
-
-        polling_wrapper.add_connection(new_connections);
     }
 }
 
