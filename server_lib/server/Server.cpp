@@ -17,16 +17,8 @@ std::string Server::start_message() const {
     return hello.str();
 }
 
-Server::Server(Params _params) : params(std::move(_params)), pool(params.working_threads), listener_socket() {}
-
-std::string get_ip(const Socket& socket) {
-    auto fd = socket.get_fd();
-    auto *pV4Addr = (sockaddr_in *)&fd;
-    in_addr ipAddr = pV4Addr->sin_addr;
-    char str[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &ipAddr, str, INET_ADDRSTRLEN);
-    return {str};
-}
+Server::Server(Params _params)
+    : params(std::move(_params)), pool(params.working_threads), listener_socket() {}
 
 /*
  * Функция process_listener принимает на вход структуру pollfd, которая содержит информацию о сокете-слушателе.
@@ -46,8 +38,9 @@ void Server::process_listener(pollfd listener) {
     socklen_t peer_size = sizeof(peer);
 
     while (true) {
-        clients.emplace_back(std::make_unique<Socket>(accept(listener_socket.get_fd(), (sockaddr *)&peer, &peer_size)));
-        Socket& client = *clients.back();
+        clients.emplace_back(std::make_unique<Socket>(
+            accept(listener_socket.get_fd(), (sockaddr *)&peer, &peer_size)));
+        Socket &client = *clients.back();
         if (client.get_fd() < 0) {
             clients.pop_back();
             if (errno == EWOULDBLOCK) {
@@ -56,17 +49,20 @@ void Server::process_listener(pollfd listener) {
                 throw std::runtime_error(ERROR_ACCEPT + std::to_string(errno));
             }
         }
-        changer_t changer = [this, channel = client.get_fd()](std::unique_ptr<AbstractHandler> handler) {
+        changer_t changer = [this,
+                             channel = client.get_fd()](std::unique_ptr<AbstractHandler> handler) {
             client_handlers[channel] = std::move(handler);
         };
-        client_handlers[client.get_fd()] = std::make_unique<EndpointHandler>(endpoints, client, changer);
+        client_handlers[client.get_fd()] =
+            std::make_unique<EndpointHandler>(endpoints, client, changer);
         client_status[client.get_fd()] = true;
         client.set_attribute(Socket::attributes::NONBLOCK);
-        use_logger("Создано подключение для нового клиента. IP: " + get_ip(client) + "Socket: " + std::to_string(client.get_fd()));
+        use_logger("Создано подключение для нового клиента. [IP: " + client.get_ip() +
+                   ", socket: " + std::to_string(client.get_fd()) + "].");
     }
 }
 
-bool Server::process_client(pollfd fd, const Socket& client) {
+bool Server::process_client(pollfd fd, const Socket &client) {
 
     if (fd.revents & POLLERR) {
         throw SocketException("Ошибка при работе с сокетом: " + std::to_string(client.get_fd()));
@@ -80,8 +76,9 @@ bool Server::process_client(pollfd fd, const Socket& client) {
 }
 
 std::string prepare_response(const std::string &response) {
-    auto response_size = static_cast<int32_t>(response.size()); // размер ответа должен влезать в int32
-    std::string response_size_str(reinterpret_cast<char*>(&response_size), sizeof(response_size));
+    auto response_size =
+        static_cast<int32_t>(response.size());    // размер ответа должен влезать в int32
+    std::string response_size_str(reinterpret_cast<char *>(&response_size), sizeof(response_size));
     response_size_str += response;
     return response_size_str;
 }
@@ -102,14 +99,14 @@ void Server::process_all_clients(pollfds_iter pollfds_begin, pollfds_iter pollfd
                 response = prepare_response(response);
                 send(client.get_fd(), response.c_str(), response.size(), MSG_NOSIGNAL);
                 client_handlers.erase(client.get_fd());
-                use_logger("Клиент отключился. IP: " + get_ip(client));
+                use_logger("Клиент отключился. IP: " + client.get_ip());
             }
         } catch (const std::exception &e) {
             use_logger("Ошибка при обработке клиента: " + std::string(e.what()));
             auto response = prepare_response(INTERNAL_ERROR_TEXT);
             send(client.get_fd(), response.c_str(), response.size(), MSG_NOSIGNAL);
             client_handlers.erase(client.get_fd());
-            use_logger("Клиент отключился. IP: " + get_ip(client));
+            use_logger("Клиент отключился. IP: " + client.get_ip());
         }
     }
 }
@@ -131,21 +128,22 @@ std::vector<pollfd> Server::generate_pollfds() {
 }
 
 void Server::start() {
-    listener_socket = Socket::create_listener_socket(params.port, params.max_connections_in_queue);
+    listener_socket = Socket::make_listener(params.port, params.max_connections_in_queue);
     listener_socket.set_attribute(Socket::attributes::NONBLOCK);
     use_logger(start_message());
 
     while (is_running) {
         auto pollfds = generate_pollfds();
-        poll(pollfds.data(), pollfds.size(), -1);
+        poll(pollfds.data(), pollfds.size(), 100);
         // Проверяем, есть ли новые подключения
         pollfd listener_pollfd = pollfds.back();
         pollfds.pop_back();
+        if (!stop_accept) {    // Обрабатываем все старые подключения
+            process_listener(listener_pollfd);
+        }
 
-        process_listener(listener_pollfd);
-        // Обрабатываем все старые подключения
-
-        size_t clients_per_thread = (clients.size() + params.working_threads - 1) / params.working_threads;
+        size_t clients_per_thread =
+            (clients.size() + params.working_threads - 1) / params.working_threads;
 
         for (size_t i = 0; i < pollfds.size(); i += clients_per_thread) {
             auto connections_begin = clients.begin() + i;
@@ -155,15 +153,15 @@ void Server::start() {
             pool.add_task([this, connections_begin, connections_end, pollfds_begin, pollfds_end]() {
                 process_all_clients(pollfds_begin, pollfds_end, connections_begin, connections_end);
             });
-
         }
 
         pool.wait_all();
 
-        clients.erase(std::remove_if(clients.begin(), clients.end(), [this](const auto& elem){
-            return client_handlers.count(elem->get_fd()) == 0;
-        }), clients.end());
-
+        clients.erase(std::remove_if(clients.begin(), clients.end(),
+                                     [this](const auto &elem) {
+                                         return client_handlers.count(elem->get_fd()) == 0;
+                                     }),
+                      clients.end());
     }
 }
 
@@ -173,10 +171,15 @@ void Server::stop() {
 
 Server::~Server() {
     stop();
+    pool.detach_all();
 }
 
-void Server::stop(std::chrono::milliseconds timeout) {
-    is_running = false;
-    std::this_thread::sleep_for(timeout);
+std::thread Server::stop(std::chrono::milliseconds timeout) {
+    stop_accept = true;
+    return std::thread([this, timeout] {
+        std::this_thread::sleep_for(timeout);
+        is_running = false;
+        pool.detach_all();
+    });
 }
 }    // namespace Server

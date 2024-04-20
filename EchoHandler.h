@@ -3,14 +3,15 @@
 
 #include <Server.h>
 
-class EchoHandler: public Server::AbstractHandler {
-public:
+class EchoHandler : public Server::AbstractHandler {
+   public:
     explicit EchoHandler(const Server::Socket& _client);
 
     std::string get_response() final;
 
     bool operator()() final;
-private:
+
+   private:
     const Server::Socket& client;
     std::function<bool()> reader;
     std::function<bool()> writer;
@@ -18,4 +19,4 @@ private:
     size_t written_in_buffer;
 };
 
-#endif //ASYNC_SERVER_EXAMPLE_ECHOHANDLER_H
+#endif    //ASYNC_SERVER_EXAMPLE_ECHOHANDLER_H

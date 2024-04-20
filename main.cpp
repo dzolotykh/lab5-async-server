@@ -15,5 +15,12 @@ int main() {
     Server::Server serv(params);
     serv.add_endpoint<EchoHandler>('e');
     serv.add_endpoint<LongRequestHandler>('l', "finished");
-    serv.start();
+    auto server_thread = std::thread([&serv]() { serv.start(); });
+    std::string command;
+    std::cin >> command;
+    if (command == "stop") {
+        auto stopping_thread = serv.stop(std::chrono::milliseconds(100));
+        stopping_thread.join();
+    }
+    server_thread.join();
 }

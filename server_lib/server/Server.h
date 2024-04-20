@@ -1,6 +1,7 @@
 #ifndef LAB5_SERVER_H
 #define LAB5_SERVER_H
 
+#include <Socket.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -8,20 +9,18 @@
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <sstream>
-#include <unordered_map>
 #include <chrono>
-#include <Socket.h>
-#include <sys/poll.h>
+#include <sstream>
 #include <stdexcept>
+#include <unordered_map>
 #include <utility>
 #include "Exceptions.h"
 #include "handlers/EndpointHandler.h"
 #include "log.h"
 
-#include "thread-pool/Pool.h"
 #include <thread>
 #include "Params.h"
+#include "thread-pool/Pool.h"
 #include "typenames.h"
 
 namespace Server {
@@ -41,9 +40,9 @@ class Server {
 
     void start();
 
-    template<typename handler_t, typename... handler_constructor_params_t>
-    void add_endpoint(char name, handler_constructor_params_t&... constructor_params) {
-        endpoints[name] = [&constructor_params...](const Socket& client) {
+    template <typename handler_t, typename... handler_constructor_params_t>
+    void add_endpoint(char name, handler_constructor_params_t &...constructor_params) {
+        endpoints[name] = [&constructor_params...](const Socket &client) {
             return std::make_unique<handler_t>(client, constructor_params...);
         };
     }
@@ -53,7 +52,7 @@ class Server {
     void stop();
 
     /// Принудительно выключает сервер после определенного таймаута.
-    void stop(std::chrono::milliseconds timeout);
+    std::thread stop(std::chrono::milliseconds timeout);
 
    private:
     [[nodiscard]] std::string start_message() const;
@@ -62,7 +61,7 @@ class Server {
 
     void process_listener(pollfd listener);
 
-    bool process_client(pollfd fd, const Socket& client);
+    bool process_client(pollfd fd, const Socket &client);
 
     std::vector<pollfd> generate_pollfds();
 
@@ -76,6 +75,7 @@ class Server {
     std::vector<std::unique_ptr<Socket>> clients;
     std::mutex logger_mtx;
     std::atomic<bool> is_running = true;
+    std::atomic<bool> stop_accept = false;
     ThreadPool::Pool pool;
 
     /* Тут будем хранить функции-обработчики для каждого клиента. Если работа с клиентом завершена,
