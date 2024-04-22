@@ -41,6 +41,11 @@ class Socket {
 
     predicate_t write_bytes_nonblock(size_t need_write, const get_bytes_t& get_bytes) const;
 
+    void write_bytes(const std::string& bytes) const;
+    void write_bytes(const char* bytes, size_t size) const;
+
+    void read_bytes(char* dst, size_t size) const;
+
     static Socket make_listener(unsigned int port, int max_connections_in_queue);
 
    private:

@@ -179,3 +179,33 @@ bool Server::Socket::NonblockingWriter::operator()() {
     bytes_written_from_src += written;
     return bytes_written_total < need_write;
 }
+
+void Server::Socket::write_bytes(const std::string &bytes) const {
+    write_bytes(bytes.data(), bytes.size());
+}
+
+void Server::Socket::write_bytes(const char *bytes, size_t size) const {
+    size_t bytes_written_total = 0;
+    while (bytes_written_total < size) {
+        ssize_t written = ::send(socket, bytes + bytes_written_total, size - bytes_written_total, MSG_NOSIGNAL);
+        if (written == -1) {
+            throw SocketException("Ошибка при записи данных в сокет.");
+        } else if (written == 0) {
+            throw ClientDisconnectedException("Клиент отключился.");
+        }
+        bytes_written_total += written;
+    }
+}
+
+void Server::Socket::read_bytes(char *dst, size_t size) const {
+    size_t bytes_read_total = 0;
+    while (bytes_read_total < size) {
+        ssize_t read = recv(socket, dst + bytes_read_total, size - bytes_read_total, 0);
+        if (read == -1) {
+            throw SocketException("Ошибка при чтении данных из сокета.");
+        } else if (read == 0) {
+            throw ClientDisconnectedException("Клиент отключился.");
+        }
+        bytes_read_total += read;
+    }
+}

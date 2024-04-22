@@ -1,8 +1,9 @@
-#include <Server.h>
 #include <iostream>
 
-#include "EchoHandler.h"
-#include "LongRequestHandler.h"
+#include <Server.h>
+#include <EchoHandler.h>
+#include <LongRequestHandler.h>
+#include <UploadHandler.h>
 
 int main() {
     const int port = 8081;
@@ -13,8 +14,11 @@ int main() {
     };
     Server::Params params(port, logger, max_connections_in_queue, working_threads);
     Server::Server serv(params);
+
     serv.add_endpoint<EchoHandler>('e');
     serv.add_endpoint<LongRequestHandler>('l', "finished");
+    serv.add_endpoint<UploadHandler>('u');
+
     auto server_thread = std::thread([&serv]() { serv.start(); });
     std::string command;
     std::cin >> command;
