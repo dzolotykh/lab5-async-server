@@ -1,8 +1,0 @@
-name: Codestyle check
-
-on:
-  commit: [dev]
-
-jobs:
-  codestyle:
-    name:
