@@ -5,6 +5,7 @@ project(async-server-example)
 
 add_subdirectory(server_lib)
 include_directories(handlers)
+include_directories(server_lib/server)
 
 add_executable(async-server-example main.cpp
         handlers/EchoHandler.cpp
