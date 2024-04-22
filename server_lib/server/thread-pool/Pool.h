@@ -11,7 +11,15 @@
 
 namespace ThreadPool {
 
-using Task = std::function<void()>;
+struct Task {
+    std::function<void()> run;
+    size_t id;
+    std::mutex mtx;
+    std::condition_variable cv;
+    bool finished = false;
+
+    Task(std::function<void()> _run, size_t _id) : run(_run), id(_id) {}
+};
 
 class Pool {
    private:
@@ -22,8 +30,10 @@ class Pool {
 
     std::mutex q_mutex;
     std::condition_variable q_cv;
-    std::queue<Task> q;
+    std::queue<std::shared_ptr<Task>> q;
     std::atomic<size_t> tasks_in_queue = 0;
+    std::atomic<size_t> tasks_added = 0;
+    std::unordered_map<size_t, std::shared_ptr<Task>> task_waiter;
 
     std::atomic<bool> stop_flag = false;
 
@@ -46,12 +56,21 @@ class Pool {
 
     Pool(int _num_threads, destructor_policy _policy = destructor_policy::JOIN);
 
-    void add_task(const Task& t);
+    [[nodiscard]] size_t add_task(const std::function<void()>& t);
 
     void wait_all();
     void detach_all();
 
     size_t size();
+
+    void wait_for_task(size_t id);
+
+    template<typename T>
+    void wait_for_task_list(const T& task_list) {
+        for (auto& i : task_list) {
+            wait_for_task(i);
+        }
+    }
 
     ~Pool();
 };

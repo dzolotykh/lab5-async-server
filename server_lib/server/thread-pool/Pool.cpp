@@ -15,14 +15,17 @@ void ThreadPool::Pool::run_worker(int id) {
             return;
         }
         update_status(id, worker_status::ACTIVE);    // поток взял на себя задачу
-        ThreadPool::Task t = std::move(q.front());    // забираем задачу из очереди
+        auto t = std::move(q.front());    // забираем задачу из очереди
         q.pop();             // удаляем задачу из очереди
         tasks_in_queue--;    // уменьшаем счетчик задач
         lock.unlock();    // разблокируем мьютекс (чтобы другие потоки могли работать с
                           // очередью)
-        t();              // выполняем задачу
+
+        t->run();              // выполняем задачу
         update_status(id,
                       worker_status::WAITING);    // выполнили задачу, обновляем статус
+        t->finished = true;    // помечаем задачу как выполненную
+        t->cv.notify_all();    // оповещаем всех, кто ждет выполнения задачи
     }
 }
 
@@ -34,12 +37,14 @@ ThreadPool::Pool::Pool(int _num_threads, ThreadPool::Pool::destructor_policy _po
     }
 }
 
-void ThreadPool::Pool::add_task(const ThreadPool::Task& t) {
+size_t ThreadPool::Pool::add_task(const std::function<void()>& t) {
     std::lock_guard<std::mutex> lock(q_mutex);    // блокируем очередь, чтобы добавить туда задачу
-    q.push(t);           // добавляем задачу в очередь
+    q.push(std::make_unique<Task>(t, tasks_added++));         // добавляем задачу в очередь
     tasks_in_queue++;    // увеличиваем счетчик задач
+    task_waiter[q.back()->id] = q.back();
     q_cv.notify_one();    // оповещаем один из свободных потоков, что появилась
         // задача
+        return q.back()->id;
 }
 
 size_t ThreadPool::Pool::size() {
@@ -84,4 +89,13 @@ void ThreadPool::Pool::wait_all() {
     std::unique_lock<std::mutex> lock(status_mutex);
     status_cv.wait(lock,
                    [this]() { return (waiting_threads == num_threads && tasks_in_queue == 0); });
+}
+
+void ThreadPool::Pool::wait_for_task(size_t id) {
+    auto t = task_waiter[id];
+    if (!t) {
+        throw std::invalid_argument("No such task");
+    }
+    std::unique_lock<std::mutex> lock(t->mtx);
+    t->cv.wait(lock, [t]() { return t->finished; });
 }

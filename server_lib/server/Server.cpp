@@ -147,17 +147,20 @@ void Server::start() {
         size_t clients_per_thread =
             (clients.size() + params.working_threads - 1) / params.working_threads;
 
+        std::vector<size_t> tasks_in_threadpool;
+
         for (size_t i = 0; i < pollfds.size(); i += clients_per_thread) {
             auto connections_begin = clients.begin() + i;
             auto connections_end = std::min(connections_begin + clients_per_thread, clients.end());
             auto pollfds_begin = pollfds.begin() + i;
             auto pollfds_end = std::min(pollfds_begin + clients_per_thread, pollfds.end());
-            pool.add_task([this, connections_begin, connections_end, pollfds_begin, pollfds_end]() {
+            size_t task_id = pool.add_task([this, connections_begin, connections_end, pollfds_begin, pollfds_end]() {
                 process_all_clients(pollfds_begin, pollfds_end, connections_begin, connections_end);
             });
+            tasks_in_threadpool.push_back(task_id);
         }
 
-        pool.wait_all();
+        pool.wait_for_task_list(tasks_in_threadpool);
 
         clients.erase(std::remove_if(clients.begin(), clients.end(),
                                      [this](const auto &elem) {
