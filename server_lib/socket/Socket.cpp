@@ -79,11 +79,6 @@ Server::Socket::predicate_t Server::Socket::read_bytes_nonblock(
     return NonblockingReader(dst, buff_size, on_read, *this);
 }
 
-Server::Socket::predicate_t Server::Socket::write_bytes_nonblock(
-    size_t need_write, const Server::Socket::get_bytes_t &get_bytes) const {
-    return Server::Socket::predicate_t();
-}
-
 Server::Socket::NonblockingReader::NonblockingReader(size_t need_read, char *dst, size_t buff_size,
                                                      Server::Socket::on_read_t on_read,
                                                      const Socket &_client)
@@ -146,4 +141,41 @@ std::string Server::Socket::get_ip() const {
     char ip[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &addr.sin_addr, ip, INET_ADDRSTRLEN);
     return {ip};
+}
+
+Server::Socket::predicate_t
+Server::Socket::write_bytes_nonblock(size_t need_write, const Server::Socket::get_bytes_t &get_bytes) const {
+    return NonblockingWriter(need_write, get_bytes, *this);
+}
+
+Server::Socket::NonblockingWriter::NonblockingWriter(size_t _need_write, const Server::Socket::get_bytes_t &_get_bytes,
+                                                     const Server::Socket &_client): client(_client), need_write(_need_write), get_bytes(_get_bytes) {
+
+}
+
+bool Server::Socket::NonblockingWriter::operator()() {
+    if (bytes_written_total == need_write) {
+        return false;
+    }
+    if (bytes_written_from_src == src_size) {
+        auto [new_src, new_size] = get_bytes();
+        src = new_src;
+        src_size = new_size;
+        bytes_collected += new_size;
+        bytes_written_from_src = 0;
+    }
+    size_t want_write =
+            std::min(src_size - bytes_written_from_src, need_write - bytes_written_total);
+    ssize_t written =
+            ::send(client.get_fd(), src + bytes_written_from_src, want_write, MSG_NOSIGNAL);
+    if (written == -1 && errno != EAGAIN) {
+        throw SocketException("Ошибка при записи данных в сокет.");
+    } else if (written == 0) {
+        throw ClientDisconnectedException("Клиент отключился.");
+    } else if (written == -1) {
+        return true;
+    }
+    bytes_written_total += written;
+    bytes_written_from_src += written;
+    return bytes_written_total < need_write;
 }

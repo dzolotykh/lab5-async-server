@@ -3,7 +3,6 @@ set(CMAKE_CXX_STANDARD 20)
 
 
 set(SOURCE_FILES server/Server.cpp
-                 server/handlers/AbstractHandler.cpp
                  server/handlers/EndpointHandler.cpp
                  server/thread-pool/Pool.cpp
         socket/Socket.cpp

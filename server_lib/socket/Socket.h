@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <sys/fcntl.h>
 #include "SocketException.h"
+#include <functional>
 
 namespace Server {
 
@@ -48,6 +49,22 @@ class Socket {
 
 enum class Socket::attributes {
     NONBLOCK = O_NONBLOCK,
+};
+
+class Socket::NonblockingWriter {
+public:
+    NonblockingWriter(size_t _need_write, const get_bytes_t& _get_bytes, const Socket& _client);
+    bool operator()();
+    ~NonblockingWriter() = default;
+private:
+    const Socket& client;
+    const get_bytes_t& get_bytes;
+    const size_t need_write;
+    size_t src_size = 0;
+    const char* src = nullptr;
+    size_t bytes_written_total = 0;
+    size_t bytes_written_from_src = 0;
+    size_t bytes_collected = 0;
 };
 
 class Socket::NonblockingReader {

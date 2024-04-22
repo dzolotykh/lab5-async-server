@@ -71,8 +71,10 @@ bool Server::process_client(pollfd fd, const Socket &client) {
     if (fd.revents & POLLHUP) {
         return false;
     }
-
-    return client_handlers[client.get_fd()]->operator()();
+    if (fd.revents & POLLIN) {
+        return client_handlers[client.get_fd()]->operator()();
+    }
+    return true;
 }
 
 std::string prepare_response(const std::string &response) {
