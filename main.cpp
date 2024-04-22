@@ -4,6 +4,7 @@
 #include <EchoHandler.h>
 #include <LongRequestHandler.h>
 #include <UploadHandler.h>
+#include "algo/AsyncMergeSort.h"
 
 int main() {
     const int port = 8081;
