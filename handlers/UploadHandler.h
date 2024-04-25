@@ -4,6 +4,7 @@
 #include "Server.h"
 #include <fstream>
 #include <filesystem>
+#include <random>
 
 class UploadHandler: public Server::AbstractHandler {
 public:
@@ -33,7 +34,8 @@ private:
     std::string response;
 
     static std::filesystem::path generate_filename();
+    static std::mutex upload_folder_mtx;
+    static std::mt19937 rnd;
 };
-
 
 #endif //ASYNC_SERVER_EXAMPLE_UPLOADHANDLER_H

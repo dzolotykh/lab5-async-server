@@ -2,6 +2,9 @@
 
 #include <iostream>
 
+auto UploadHandler::rnd = std::mt19937(std::random_device{}());
+auto UploadHandler::upload_folder_mtx = std::mutex{};
+
 UploadHandler::UploadHandler(const Server::Socket &_client): client(_client) {
     reader = client.read_bytes_nonblock(sizeof(file_size), buffer.data(), buffer_size, [this, total_read = 0](size_t read) mutable {
         char* ptr = reinterpret_cast<char*>(&file_size);
@@ -19,6 +22,7 @@ UploadHandler::UploadHandler(const Server::Socket &_client): client(_client) {
             file.open(output / filename, std::ios::binary);
             reader = client.read_bytes_nonblock(file_size, buffer.data(), buffer_size, [this, total_read = 0](size_t read) mutable {
                 file.write(buffer.data(), static_cast<int>(read));
+                std::cout << 1234 << std::endl;
                 total_read += static_cast<int>(read);
                 if (total_read == file_size) {
                     file.close();
@@ -41,7 +45,13 @@ bool UploadHandler::operator()() {
 }
 
 std::filesystem::path UploadHandler::generate_filename() {
-    return std::to_string(std::chrono::system_clock::now().time_since_epoch().count());
+    std::lock_guard<std::mutex> lock(upload_folder_mtx);
+    std::string filename;
+    for (int i = 0; i < 32; ++i) {
+        auto sym_num = static_cast<char>(rnd() % 26);
+        filename += static_cast<char>('a' + sym_num);
+    }
+    return filename;
 }
 
 std::string UploadHandler::get_response() {
