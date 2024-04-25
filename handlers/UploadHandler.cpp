@@ -46,11 +46,13 @@ bool UploadHandler::operator()() {
 
 std::filesystem::path UploadHandler::generate_filename() {
     std::lock_guard<std::mutex> lock(upload_folder_mtx);
-    std::string filename;
-    for (int i = 0; i < 32; ++i) {
-        auto sym_num = static_cast<char>(rnd() % 26);
-        filename += static_cast<char>('a' + sym_num);
-    }
+    std::filesystem::path filename;
+    do {
+        for (int i = 0; i < 32; ++i) {
+            auto sym_num = static_cast<char>(rnd() % 26);
+            filename += static_cast<char>('a' + sym_num);
+        }
+    } while (std::filesystem::exists(output / filename));
     return filename;
 }
 
