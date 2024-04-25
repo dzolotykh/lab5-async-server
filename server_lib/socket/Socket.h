@@ -11,13 +11,13 @@ namespace Server {
 /// RAII-обертка для сокета
 class Socket {
    public:
-    class NonblockingReader;
-    class NonblockingWriter;
-
     using fd = int;
     using on_read_t = std::function<void(size_t)>;
     using get_bytes_t = std::function<std::pair<const char*, size_t>()>;
     using predicate_t = std::function<bool()>;
+    
+    class NonblockingReader;
+    class NonblockingWriter;
     enum class attributes;
 
     explicit Socket(int _socket) noexcept;
@@ -29,22 +29,22 @@ class Socket {
     Socket& operator=(Socket&& other) noexcept;
     ~Socket() noexcept;
 
-    [[nodiscard]] fd get_fd() const noexcept;
-    [[nodiscard]] std::string get_ip() const;
+    [[nodiscard]] fd get_fd() const noexcept ;
+    [[nodiscard]] std::string get_ip() const ;
 
     void set_attribute(attributes attr);
 
-    predicate_t read_bytes_nonblock(size_t need_read, char* dst, size_t buff_size,
-                                    const on_read_t& on_read) const;
+    [[nodiscard]] predicate_t read_bytes_nonblock(size_t need_read, char* dst, size_t buff_size,
+                                    const on_read_t& on_read) const ;
 
-    predicate_t read_bytes_nonblock(char* dst, size_t buff_size, const on_read_t& on_read) const;
+    [[nodiscard]] predicate_t read_bytes_nonblock(char* dst, size_t buff_size, const on_read_t& on_read) const ;
 
-    predicate_t write_bytes_nonblock(size_t need_write, const get_bytes_t& get_bytes) const;
+    [[nodiscard]] predicate_t write_bytes_nonblock(size_t need_write, const get_bytes_t& get_bytes) const ;
 
-    void write_bytes(const std::string& bytes) const;
-    void write_bytes(const char* bytes, size_t size) const;
+    void write_bytes(const std::string& bytes) const ;
+    void write_bytes(const char* bytes, size_t size) const ;
 
-    void read_bytes(char* dst, size_t size) const;
+    void read_bytes(char* dst, size_t size) const ;
 
     static Socket make_listener(unsigned int port, int max_connections_in_queue);
 
