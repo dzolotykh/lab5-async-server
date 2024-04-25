@@ -41,7 +41,7 @@ class Server {
     void start();
 
     template <typename handler_t, typename... handler_constructor_params_t>
-    void add_endpoint(char name, handler_constructor_params_t &...constructor_params) {
+    void add_endpoint(char name, handler_constructor_params_t&&...constructor_params) {
         endpoints[name] = [&constructor_params...](const Socket &client) {
             return std::make_unique<handler_t>(client, constructor_params...);
         };
@@ -76,6 +76,7 @@ class Server {
     std::mutex logger_mtx;
     std::atomic<bool> is_running = true;
     std::atomic<bool> stop_accept = false;
+
     ThreadPool::Pool pool;
 
     /* Тут будем хранить функции-обработчики для каждого клиента. Если работа с клиентом завершена,

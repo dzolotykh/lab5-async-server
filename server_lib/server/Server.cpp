@@ -68,13 +68,7 @@ bool Server::process_client(pollfd fd, const Socket &client) {
         throw SocketException("Ошибка при работе с сокетом: " + std::to_string(client.get_fd()));
     }
 
-    if (fd.revents & POLLHUP) {
-        return false;
-    }
-    if (fd.revents & POLLIN) {
-        return client_handlers[client.get_fd()]->operator()();
-    }
-    return true;
+    return client_handlers[client.get_fd()]->operator()();
 }
 
 std::string prepare_response(const std::string &response) {
@@ -96,17 +90,23 @@ void Server::process_all_clients(pollfds_iter pollfds_begin, pollfds_iter pollfd
         const Socket &client = **socket_i;
         pollfd &fd = *pollfd_i;
         try {
-            if (!process_client(fd, client)) {
+            bool need_continue = process_client(fd, client);
+
+            if (!need_continue) {
                 auto response = client_handlers[client.get_fd()]->get_response();
                 response = prepare_response(response);
-                send(client.get_fd(), response.c_str(), response.size(), MSG_NOSIGNAL);
+                client.write_bytes(response);
                 client_handlers.erase(client.get_fd());
                 use_logger("Клиент отключился. IP: " + client.get_ip());
             }
         } catch (const std::exception &e) {
             use_logger("Ошибка при обработке клиента: " + std::string(e.what()));
             auto response = prepare_response(INTERNAL_ERROR_TEXT);
-            send(client.get_fd(), response.c_str(), response.size(), MSG_NOSIGNAL);
+            try {
+                client.write_bytes(response);
+            } catch (const std::exception &e) {
+                use_logger("Ошибка при отправке сообщения клиенту: " + std::string(e.what()));
+            }
             client_handlers.erase(client.get_fd());
             use_logger("Клиент отключился. IP: " + client.get_ip());
         }

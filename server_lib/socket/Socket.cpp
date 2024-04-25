@@ -6,6 +6,8 @@
 
 #include <utility>
 
+#include <iostream>
+
 Server::Socket &Server::Socket::operator=(Server::Socket &&other) noexcept {
     if (this != &other) {
         socket = other.socket;
@@ -100,6 +102,7 @@ bool Server::Socket::NonblockingReader::operator()() {
         } else if (read == 0) {
             return false;
         }
+        std::cout << read << std::endl;
         on_read(read);
 
         return true;
