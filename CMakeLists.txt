@@ -26,6 +26,8 @@ add_executable(async-server-example
         src/files/FileManager.cpp
         include/server/handlers/UploadHandler.h
         src/server/handlers/UploadHandler.cpp
+        include/server/handlers/DownloadHandler.h
+        src/server/handlers/DownloadHandler.cpp
 )
 target_link_libraries(async-server-example)
 

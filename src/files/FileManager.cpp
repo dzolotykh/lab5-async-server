@@ -21,3 +21,7 @@ std::filesystem::path Server::Files::FileManager::create_unique() {
     std::lock_guard lock(mutex);
     return dir / random_string(32);
 }
+
+std::filesystem::path Server::Files::FileManager::get_dir() const {
+    return dir;
+}

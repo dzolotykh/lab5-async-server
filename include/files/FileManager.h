@@ -12,11 +12,12 @@ namespace Server::Files {
         explicit FileManager(std::filesystem::path _dir);;
         [[nodiscard]] std::filesystem::path create_unique();
         void remove_file(const std::filesystem::path& file);
+        std::filesystem::path get_dir() const;
     private:
         [[nodiscard]] std::string random_string(size_t length);
 
         std::mutex mutex;
-        std::filesystem::path dir;
+        const std::filesystem::path dir;
         std::mt19937 gen{std::random_device{}()};
         const std::string CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     };
