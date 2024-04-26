@@ -6,7 +6,7 @@
 #include <exceptions/SocketExceptions.h>
 
 namespace Server::Handlers {
-    class EchoHandler : public IHandler {
+    class EchoHandler final : public IHandler {
         public:
         explicit EchoHandler(const ClientSocket& _client): client(_client) {}
 

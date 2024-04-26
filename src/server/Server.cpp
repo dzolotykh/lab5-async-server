@@ -13,7 +13,17 @@ Server::Server::~Server() {
 void Server::Server::start() {
     while (true) {
         auto client = listener_socket.accept_client();
-        handle_client(client);
+        try {
+            handle_client(client);
+        } catch (Exceptions::EndpointNotFoundException &e) {
+            try {
+                client.send_bytes("Endpoint not found");
+            } catch (...) {
+                // Do nothing
+            }
+        } catch (Exceptions::SocketException &e) {
+            std::cerr << "Socket exception: " << e.what() << "\n";
+        }
     }
 }
 
@@ -29,7 +39,8 @@ Server::Server &Server::Server::operator=(Server &&other) noexcept {
 }
 
 void Server::Server::handle_client(const ClientSocket& client) {
-    int8_t endpoint_byte = client.read_byte();
+    std::cout << "Handling client: " << client.get_fd() << "\n";
+    char endpoint_byte = client.read_byte();
     if (endpoints.find(endpoint_byte) == endpoints.end()) {
         throw Exceptions::EndpointNotFoundException(endpoint_byte);
     }

@@ -16,13 +16,13 @@ namespace Server {
         ClientSocket(ClientSocket&& other) noexcept;
         ClientSocket& operator=(ClientSocket&& other) noexcept;
 
-        void send_bytes(const int8_t* bytes_dst, size_t amount) const;
+        void send_bytes(const char* bytes_dst, size_t amount) const;
         void send_bytes(const std::string& bytes) const;
-        void send_byte(int8_t byte) const;
+        void send_byte(char byte) const;
 
-        void read_bytes(int8_t* to, size_t amount) const;
-        [[nodiscard]] std::vector<int8_t> read_bytes(size_t amount) const;
-        [[nodiscard]] int8_t read_byte() const;
+        void read_bytes(char* to, size_t amount) const;
+        [[nodiscard]] std::vector<char> read_bytes(size_t amount) const;
+        [[nodiscard]] char read_byte() const;
         [[nodiscard]] size_t ready_to_read() const;
 
         ~ClientSocket();

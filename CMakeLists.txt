@@ -22,6 +22,10 @@ add_executable(async-server-example
         src/server/Response.cpp
         include/logging/Logger.h
         src/logging/Logger.cpp
+        include/files/FileManager.h
+        src/files/FileManager.cpp
+        include/server/handlers/UploadHandler.h
+        src/server/handlers/UploadHandler.cpp
 )
 target_link_libraries(async-server-example)
 

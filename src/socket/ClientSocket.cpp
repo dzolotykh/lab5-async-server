@@ -2,7 +2,7 @@
 #include <exceptions/SocketExceptions.h>
 #include <sys/ioctl.h>
 
-void Server::ClientSocket::send_bytes(const int8_t *bytes_dst, size_t amount) const {
+void Server::ClientSocket::send_bytes(const char *bytes_dst, size_t amount) const {
     size_t sent = 0;
     while (sent < amount) {
         size_t need_send = amount - sent;
@@ -19,7 +19,7 @@ void Server::ClientSocket::send_bytes(const int8_t *bytes_dst, size_t amount) co
     }
 }
 
-void Server::ClientSocket::read_bytes(int8_t* to, size_t amount) const {
+void Server::ClientSocket::read_bytes(char* to, size_t amount) const {
     ssize_t result = recv(socket_fd, to, amount, MSG_WAITALL);
     if (result == -1) throw Server::Exceptions::SocketExceptionErrno(*this, errno);
     if (result != amount) throw Server::Exceptions::ClientDisconnectedException(*this);
@@ -49,22 +49,22 @@ Server::ClientSocket::~ClientSocket() {
     shutdown(socket_fd, SHUT_RDWR);
 }
 
-std::vector<int8_t> Server::ClientSocket::read_bytes(size_t amount) const {
-    std::vector<int8_t> buffer(amount);
+std::vector<char> Server::ClientSocket::read_bytes(size_t amount) const {
+    std::vector<char> buffer(amount);
     read_bytes(buffer.data(), amount);
     return buffer;
 }
 
-int8_t Server::ClientSocket::read_byte() const {
-    int8_t byte;
+char Server::ClientSocket::read_byte() const {
+    char byte;
     read_bytes(&byte, 1);
     return byte;
 }
 
 void Server::ClientSocket::send_bytes(const std::string &bytes) const {
-    send_bytes(reinterpret_cast<const int8_t*>(bytes.data()), bytes.size());
+    send_bytes(reinterpret_cast<const char*>(bytes.data()), bytes.size());
 }
 
-void Server::ClientSocket::send_byte(int8_t byte) const {
+void Server::ClientSocket::send_byte(char byte) const {
     send_bytes(&byte, 1);
 }

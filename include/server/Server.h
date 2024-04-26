@@ -30,7 +30,7 @@ namespace Server {
         void stop();
 
         template <typename handler_t, typename... handler_constructor_params_t>
-        void set_endpoint(int8_t endpoint_byte, handler_constructor_params_t&&...constructor_params) {
+        void set_endpoint(char endpoint_byte, handler_constructor_params_t&&...constructor_params) {
             endpoints[endpoint_byte] = [&constructor_params...](const ClientSocket& client) {
                 return std::make_unique<handler_t>(client, constructor_params...);
             };
@@ -38,7 +38,7 @@ namespace Server {
 
     private:
         ListenerSocket listener_socket;
-        std::unordered_map<int8_t, handler_provider_t> endpoints;
+        std::unordered_map<char, handler_provider_t> endpoints;
 
         void handle_client(const ClientSocket& client);
     };

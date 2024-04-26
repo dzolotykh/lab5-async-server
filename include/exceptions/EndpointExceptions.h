@@ -19,7 +19,7 @@ namespace Server::Exceptions {
 
     class EndpointNotFoundException : public EndpointException {
     public:
-        explicit EndpointNotFoundException(int8_t endpoint_byte) : EndpointException("Endpoint not found: " + std::to_string(endpoint_byte)) {}
+        explicit EndpointNotFoundException(char endpoint_byte) : EndpointException("Endpoint not found: " + std::to_string(endpoint_byte)) {}
     };
 
 }

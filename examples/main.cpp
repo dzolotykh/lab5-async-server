@@ -4,12 +4,16 @@
 #include <exceptions/SocketExceptions.h>
 #include <thread>
 #include <server/Server.h>
+#include <server/handlers/UploadHandler.h>
+#include <files/FileManager.h>
 #include "server/handlers/EchoHandler.h"
 
 int main() {
+    Server::Files::FileManager fm("../uploads");
     try {
-        Server::Server server(8081, 10);
+        Server::Server server(8080, 10);
         server.set_endpoint<Server::Handlers::EchoHandler>('e');
+        server.set_endpoint<Server::Handlers::UploadHandler>('u', fm);
         server.start();
     } catch (std::exception& e) {
         std::cerr << "An error occurred: " << e.what() << std::endl;
