@@ -3,19 +3,25 @@ set(CMAKE_CXX_STANDARD 20)
 
 project(async-server-example)
 
-add_subdirectory(server_lib)
-include_directories(handlers)
-include_directories(server_lib/server)
+include_directories(include)
 
-find_package(GTest REQUIRED)
-
-add_executable(async-server-example main.cpp
-        handlers/EchoHandler.cpp
-        handlers/LongRequestHandler.cpp
-        handlers/UploadHandler.cpp
-        handlers/SortHandler.cpp
-        handlers/SortHandler.cpp
+add_executable(async-server-example
+        src/socket/Socket.cpp
+        src/socket/ListenerSocket.cpp
+        src/socket/ClientSocket.cpp
+        examples/main.cpp
+        include/socket/ClientSocket.h
+        include/exceptions/SocketExceptions.h
+        include/socket/ListenerSocket.h
+        include/server/handlers/IHandler.h
+        include/server/Response.h
+        include/server/Server.h
+        src/server/Server.cpp
+        include/server/handlers/EchoHandler.h
+        src/server/handlers/EchoHandler.cpp
+        src/server/Response.cpp
+        include/logging/Logger.h
+        src/logging/Logger.cpp
 )
-
-target_link_libraries(async-server-example async-server gtest::gtest)
+target_link_libraries(async-server-example)
 
