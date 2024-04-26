@@ -28,6 +28,9 @@ add_executable(async-server-example
         src/server/handlers/UploadHandler.cpp
         include/server/handlers/DownloadHandler.h
         src/server/handlers/DownloadHandler.cpp
+        include/server/handlers/GenerationHandler.h
+        include/multithreading/ThreadPool.h
+        src/multithreading/ThreadPool.cpp
 )
 target_link_libraries(async-server-example)
 
