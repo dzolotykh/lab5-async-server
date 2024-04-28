@@ -1,6 +1,7 @@
 #include <socket/ClientSocket.h>
 #include <exceptions/SocketExceptions.h>
 #include <sys/ioctl.h>
+#include <iostream>
 
 void Server::ClientSocket::send_bytes(const char *bytes_dst, size_t amount) const {
     size_t sent = 0;
@@ -12,7 +13,7 @@ void Server::ClientSocket::send_bytes(const char *bytes_dst, size_t amount) cons
             continue;
         }
 
-        if (errno == ECONNRESET) {
+        if (errno == ECONNRESET || errno == SIGPIPE) {
             throw Server::Exceptions::ClientDisconnectedException(*this);
         }
         throw Server::Exceptions::SocketExceptionErrno(*this, errno);

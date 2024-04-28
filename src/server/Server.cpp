@@ -3,7 +3,7 @@
 #include <iostream>
 
 Server::Server::Server(uint16_t port, int max_connections, int _tp_size): listener_socket(port, max_connections), tp(_tp_size) {
-
+    signal(SIGPIPE, SIG_IGN);
 }
 
 Server::Server::~Server() {

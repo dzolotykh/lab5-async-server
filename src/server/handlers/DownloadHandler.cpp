@@ -3,8 +3,6 @@
 Server::Handlers::DownloadHandler::DownloadHandler(const Server::ClientSocket &_client, Server::Files::FileManager &_fm)
         : client(_client), fm(_fm), buffer(1024 * 1024) {}
 
-#include <iostream>
-
 Server::Response Server::Handlers::DownloadHandler::handle() {
     std::string filename;
     filename.resize(32);

@@ -16,7 +16,7 @@ class ThreadPool {
    public:
     class Task {
        public:
-        template <typename F, typename... Args>    // топ 10 самых нечитаемых строчек кода. 1 место:
+        template <typename F, typename... Args>
         Task(F&& _task,
              std::shared_ptr<std::promise<decltype(_task(std::declval<Args>()...))>>&& promise_ptr,
              Args&&... args) {
