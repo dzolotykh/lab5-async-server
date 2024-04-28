@@ -10,10 +10,10 @@ namespace Server {
     public:
         using fd = int;
 
-        fd get_fd() const noexcept;
-        std::string get_ip() const;
+        virtual fd get_fd() const noexcept;
+        virtual std::string get_ip() const;
 
-        ~Socket() noexcept;
+        virtual ~Socket() noexcept;
 
     protected:
         Socket(fd _socket_fd);
