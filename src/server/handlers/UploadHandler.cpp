@@ -20,6 +20,6 @@ namespace Server::Handlers {
             bytes_read += bytes_to_read;
         }
         file.close();
-        return Response{filename};
+        return Response{filename.filename()};
     }
 }

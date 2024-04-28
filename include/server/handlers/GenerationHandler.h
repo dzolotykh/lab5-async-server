@@ -9,6 +9,7 @@
 #include <exceptions/GenerationExceptions.h>
 #include <set>
 #include <functional>
+#include <graphgen.h>
 
 namespace Server::Handlers {
     class GenerationHandler final : public IHandler {
@@ -21,11 +22,6 @@ namespace Server::Handlers {
         Files::FileManager& fm;
         Multithreading::ThreadPool tp;
         std::string input_data;
-
-        std::string generate_graph_task() {
-
-        }
-
     };
 }
 

@@ -5,6 +5,9 @@ project(async-server-example)
 
 include_directories(include)
 
+add_subdirectory(graphgen)
+include_directories(graphgen)
+
 add_executable(async-server-example
         src/socket/Socket.cpp
         src/socket/ListenerSocket.cpp
@@ -35,5 +38,5 @@ add_executable(async-server-example
         src/server/handlers/GenerationHandler.cpp
         include/exceptions/GenerationExceptions.h
 )
-target_link_libraries(async-server-example)
+target_link_libraries(async-server-example graphgen)
 

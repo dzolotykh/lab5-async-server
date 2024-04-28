@@ -11,17 +11,16 @@ Server::Server::~Server() {
 }
 
 void Server::Server::start() {
-    std::vector<std::future<void>> clients;
     while (true) {
         auto client = listener_socket.accept_client();
-        clients.emplace_back(tp.add_task([this, client]() {
+        tp.add_task([this, client]() {
             try {
                 handle_client(*client);
             } catch (const std::exception& err) {
                 std::cout << err.what() << std::endl;
             }
             std::cout << "Пользователь на сокете " << client->get_fd() << " обработан." << std::endl;
-        }));
+        });
     }
 }
 

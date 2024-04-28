@@ -49,7 +49,7 @@ class ThreadPool {
         delete;    // пока мне это не надо, поэтому не сделал :)
     ThreadPool& operator=(ThreadPool&& other) noexcept = delete;
 
-    explicit ThreadPool(size_t threads_count);
+    explicit ThreadPool(size_t _threads_count);
 
     template <typename F, typename... Args>
     auto add_task(F task, const Args&... args) -> std::future<decltype(task(args...))> {
@@ -71,6 +71,7 @@ class ThreadPool {
     std::condition_variable q_cv{};
 
     std::vector<std::thread> threads;
+    size_t threads_count;
     std::atomic<bool> stop = false;
     void solve_task();
 };

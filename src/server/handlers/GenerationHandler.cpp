@@ -36,16 +36,15 @@ namespace Server::Handlers {
                 if (u == v) {
                     throw Exceptions::InvalidInputException("В графе не может быть петель");
                 }
-                if (u <= 0 || v <= 0 || u > num_vertex || v > num_vertex) {
+                if (u < 0 || v < 0 || u >= num_vertex || v >= num_vertex) {
                     throw Exceptions::InvalidInputException("Неправильно указано ребро: " + std::to_string(u) + " <---> " + std::to_string(v));
                 }
                 used_edges.insert(std::make_pair(std::min(u, v), std::max(u, v)));
             }
-            if (!in.eof()) {
-                throw Exceptions::InvalidInputException("В файле кроме списка ребер есть еще что-то.");
-            }
             in.close();
-            return std::string("err");
+            std::filesystem::path result = fm.create_unique();
+            generate_graph(std::filesystem::absolute(fm.get_dir() / input_data), std::filesystem::absolute(result));
+            return result.filename().string();
         });
 
         try {

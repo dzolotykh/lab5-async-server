@@ -20,14 +20,36 @@ def _send_upload_request(s, socket):
         socket.send(encoded_string)
     except BrokenPipeError:
         pass
-    print("Sent upload request")
-    response = socket.recv(1024)
-    response2 = socket.recv(1024)
-    print(response, '@', response2.decode())
+    response = socket.recv(1024).decode()
+    with open('../uploads/' + response, 'r') as f:
+        return response, f.read() == s
+
+def _send_download_request(token, socket):
+    encoded_string = token.encode()
+    socket.send("d".encode())
+    socket.send(encoded_string)
+    size = int.from_bytes(socket.recv(4), 'little')
+    print(size)
+    file = socket.recv(size).decode()
+    with open('../uploads/' + token, 'r') as f:
+        return f.read() == file
 
 def test_upload():
     s = connect_to_server()
-    _send_upload_request(sample * 1000, s)
+    token, check_result = _send_upload_request(sample * 1000, s)
+    if check_result:
+        print(f'✅ Тест загрузки пройден успешно. Токен: {token}')
+    else:
+        print(f'❌ Тест загрузки не пройден. Токен: {token}')
     s.close()
+    s = connect_to_server()
+    result = _send_download_request(token, s)
+    s.close()
+    if result:
+        print(f'✅ Тест скачивания пройден успешно. Токен: {token}')
+    else:
+        print(f'❌ Тест скачивания не пройден. Токен: {token}')
+
+
 
 test_upload()
