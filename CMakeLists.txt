@@ -31,6 +31,9 @@ add_executable(async-server-example
         include/server/handlers/GenerationHandler.h
         include/multithreading/ThreadPool.h
         src/multithreading/ThreadPool.cpp
+        src/server/handlers/GenerationHandler.cpp
+        src/server/handlers/GenerationHandler.cpp
+        include/exceptions/GenerationExceptions.h
 )
 target_link_libraries(async-server-example)
 

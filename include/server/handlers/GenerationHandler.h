@@ -3,16 +3,29 @@
 
 #include <server/handlers/IHandler.h>
 #include <socket/ClientSocket.h>
+#include <files/FileManager.h>
+#include <multithreading/ThreadPool.h>
+#include <exceptions/SocketExceptions.h>
+#include <exceptions/GenerationExceptions.h>
+#include <set>
 #include <functional>
 
 namespace Server::Handlers {
     class GenerationHandler final : public IHandler {
     public:
-        GenerationHandler(const ClientSocket& _client);
+        GenerationHandler(const ClientSocket& _client, Files::FileManager& _fm, int num_threads);
 
         Response handle() override;
     private:
         const ClientSocket& client;
+        Files::FileManager& fm;
+        Multithreading::ThreadPool tp;
+        std::string input_data;
+
+        std::string generate_graph_task() {
+
+        }
+
     };
 }
 

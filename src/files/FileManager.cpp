@@ -25,3 +25,11 @@ std::filesystem::path Server::Files::FileManager::create_unique() {
 std::filesystem::path Server::Files::FileManager::get_dir() const {
     return dir;
 }
+
+bool Server::Files::FileManager::exists(const std::filesystem::path &file) {
+    return std::filesystem::exists(dir / file);
+}
+
+std::ifstream Server::Files::FileManager::open(const std::filesystem::path &file) {
+    return std::ifstream(dir / file);
+}

@@ -4,6 +4,7 @@
 #include <mutex>
 #include <filesystem>
 #include <random>
+#include <fstream>
 
 namespace Server::Files {
     // класс, отвечающий за потокобезопасную работу с определенной директорией
@@ -12,7 +13,9 @@ namespace Server::Files {
         explicit FileManager(std::filesystem::path _dir);;
         [[nodiscard]] std::filesystem::path create_unique();
         void remove_file(const std::filesystem::path& file);
-        std::filesystem::path get_dir() const;
+        [[nodiscard]] std::filesystem::path get_dir() const;
+        [[nodiscard]] bool exists(const std::filesystem::path& file);
+        [[nodiscard]] std::ifstream open(const std::filesystem::path& file);
     private:
         [[nodiscard]] std::string random_string(size_t length);
 
