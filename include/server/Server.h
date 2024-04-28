@@ -7,10 +7,10 @@
 #include <server/Response.h>
 #include <exceptions/EndpointExceptions.h>
 #include <logging/Logger.h>
+#include <multithreading/ThreadPool.h>
 
 #include <functional>
 
-class handler_provider_t;
 namespace Server {
     class Server {
     public:
@@ -20,10 +20,10 @@ namespace Server {
         Server(const Server& other) = delete;
         Server& operator=(const Server& other) = delete;
 
-        Server(Server&& other) noexcept;
-        Server& operator=(Server&& other) noexcept;
+        Server(Server&& other) noexcept = delete;
+        Server& operator=(Server&& other) noexcept = delete;
 
-        Server(uint16_t port, int max_connections);
+        Server(uint16_t port, int max_connections, int thread_pool_size);
         ~Server();
 
         void start();
@@ -39,6 +39,7 @@ namespace Server {
     private:
         ListenerSocket listener_socket;
         std::unordered_map<char, handler_provider_t> endpoints;
+        Multithreading::ThreadPool tp;
 
         void handle_client(const ClientSocket& client);
     };

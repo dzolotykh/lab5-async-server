@@ -11,7 +11,7 @@
 int main() {
     Server::Files::FileManager fm("../uploads");
     try {
-        Server::Server server(8080, 10);
+        Server::Server server(8080, 10, 5);
         server.set_endpoint<Server::Handlers::EchoHandler>('e');
         server.set_endpoint<Server::Handlers::UploadHandler>('u', fm);
         server.start();

@@ -19,6 +19,7 @@ void Server::Multithreading::ThreadPool::solve_task() {
     q_cv.wait(lock, [this] { return !tasks.empty(); });
     Task task = std::move(tasks.front());
     tasks.pop();
+    lock.unlock();
     task();
 }
 

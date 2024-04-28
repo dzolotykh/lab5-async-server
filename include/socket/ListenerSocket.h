@@ -16,8 +16,7 @@ namespace Server {
 
         ListenerSocket(uint16_t port, int max_connections);
 
-        [[nodiscard]] ClientSocket accept_client() const;
-        [[nodiscard]] ClientSocket accept_client_block(size_t timeout) const;
+        [[nodiscard]] std::shared_ptr<ClientSocket> accept_client() const;
     };
 }
 

@@ -63,8 +63,6 @@ class ThreadPool {
         return future;
     }
 
-    void solve_task();
-
     ~ThreadPool();
 
    private:
@@ -74,6 +72,7 @@ class ThreadPool {
 
     std::vector<std::thread> threads;
     std::atomic<bool> stop = false;
+    void solve_task();
 };
 }    // namespace Server::Multithreading
 

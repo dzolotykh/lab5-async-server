@@ -2,7 +2,7 @@
 #include "exceptions/SocketExceptions.h"
 #include <iostream>
 
-Server::Server::Server(uint16_t port, int max_connections): listener_socket(port, max_connections) {
+Server::Server::Server(uint16_t port, int max_connections, int _tp_size): listener_socket(port, max_connections), tp(_tp_size) {
 
 }
 
@@ -11,38 +11,26 @@ Server::Server::~Server() {
 }
 
 void Server::Server::start() {
+    std::vector<std::future<void>> clients;
     while (true) {
         auto client = listener_socket.accept_client();
-        try {
-            handle_client(client);
-        } catch (Exceptions::EndpointNotFoundException &e) {
+        clients.emplace_back(tp.add_task([this, client]() {
             try {
-                client.send_bytes("Endpoint not found");
-            } catch (...) {
-                // Do nothing
+                handle_client(*client);
+            } catch (const std::exception& err) {
+                std::cout << err.what() << std::endl;
             }
-        } catch (Exceptions::SocketException &e) {
-            std::cerr << "Socket exception: " << e.what() << "\n";
-        }
+            std::cout << "Пользователь на сокете " << client->get_fd() << " обработан." << std::endl;
+        }));
     }
-}
-
-Server::Server::Server(Server &&other) noexcept : listener_socket(std::move(other.listener_socket)) {
-    endpoints = std::move(other.endpoints);
-}
-
-Server::Server &Server::Server::operator=(Server &&other) noexcept {
-    Server tmp(std::move(other));
-    std::swap(listener_socket, tmp.listener_socket);
-    std::swap(endpoints, tmp.endpoints);
-    return *this;
 }
 
 void Server::Server::handle_client(const ClientSocket& client) {
     std::cout << "Handling client: " << client.get_fd() << "\n";
     char endpoint_byte = client.read_byte();
     if (endpoints.find(endpoint_byte) == endpoints.end()) {
-        throw Exceptions::EndpointNotFoundException(endpoint_byte);
+        client.send_bytes("Unknown endpoint");
+        return;
     }
     auto handler = endpoints[endpoint_byte](client);
     try {

@@ -31,28 +31,12 @@ Server::ListenerSocket &Server::ListenerSocket::operator=(Server::ListenerSocket
     return *this;
 }
 
-Server::ClientSocket Server::ListenerSocket::accept_client() const {
+std::shared_ptr<Server::ClientSocket> Server::ListenerSocket::accept_client() const {
     sockaddr_in client_address{};
     socklen_t client_address_len = sizeof(client_address);
     int client_fd = accept(socket_fd, (sockaddr *)&client_address, &client_address_len);
     if (client_fd < 0) {
         throw Server::Exceptions::SocketExceptionErrno(*this, errno);
     }
-    return Server::ClientSocket(client_fd);
-}
-
-Server::ClientSocket Server::ListenerSocket::accept_client_block(size_t timeout) const {
-    fd_set read_set;
-    FD_ZERO(&read_set);
-    FD_SET(socket_fd, &read_set);
-    timeval tv{};
-    tv.tv_sec = timeout;
-    int result = select(socket_fd + 1, &read_set, nullptr, nullptr, &tv);
-    if (result == -1) {
-        throw Server::Exceptions::SocketExceptionErrno(*this, errno);
-    }
-    if (result == 0) {
-        throw Server::Exceptions::NoClientException();
-    }
-    return accept_client();
+    return std::shared_ptr<Server::ClientSocket>(new ClientSocket(client_fd));
 }
