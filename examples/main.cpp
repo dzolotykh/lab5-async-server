@@ -1,20 +1,19 @@
 #include <exceptions/SocketExceptions.h>
 #include <files/FileManager.h>
 #include <server/Server.h>
+#include <server/handlers/AmogusHandler.h>
 #include <server/handlers/DownloadHandler.h>
 #include <server/handlers/GenerationHandler.h>
 #include <server/handlers/UploadHandler.h>
 #include <socket/ClientSocket.h>
 #include <socket/ListenerSocket.h>
+#include <csignal>
 #include <iostream>
 #include <thread>
 #include "server/handlers/EchoHandler.h"
-#include <server/handlers/AmogusHandler.h>
-#include <csignal>
-
 
 class ServerRunner {
-public:
+   public:
     ServerRunner() {
         instance = this;
         std::signal(SIGTERM, sigterm_handler);
@@ -34,7 +33,7 @@ public:
                 server.set_endpoint<Server::Handlers::GenerationHandler>('g', fm, pool);
                 server.set_endpoint<Server::Handlers::Sus::AmogusHandler>('i');
                 server.start();
-            } catch (std::exception &e) {
+            } catch (std::exception& e) {
                 std::cerr << "An error occurred: " << e.what() << std::endl;
             }
         });
@@ -45,7 +44,7 @@ public:
         server_thread.join();
     }
 
-private:
+   private:
     static const int num_threads = 8;
     static const int num_threads_in_generation = 8;
     static const int port = 8080;

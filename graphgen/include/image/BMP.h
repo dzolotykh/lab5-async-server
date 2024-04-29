@@ -1,12 +1,12 @@
 #ifndef BMP_H
 #define BMP_H
 
+#include <cstddef>
 #include <exception>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <vector>
-#include <cstddef>
 
 class BMP {
    public:

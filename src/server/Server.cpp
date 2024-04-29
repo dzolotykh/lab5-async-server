@@ -25,7 +25,8 @@ void Server::Server::start() {
             } catch (const std::exception& err) {
                 std::cout << err.what() << std::endl;
             }
-            std::cout << "Пользователь на сокете " << client->get_fd() << " обработан." << std::endl;
+            std::cout << "Пользователь на сокете " << client->get_fd() << " обработан."
+                      << std::endl;
         }));
     }
     std::cout << "Ожидание завершения всех клиентов..." << std::endl;
