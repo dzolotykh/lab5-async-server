@@ -1,7 +1,8 @@
 #include <server/handlers/DownloadHandler.h>
 
-Server::Handlers::DownloadHandler::DownloadHandler(const Server::ClientSocket &_client, Server::Files::FileManager &_fm)
-        : client(_client), fm(_fm), buffer(1024 * 1024) {}
+Server::Handlers::DownloadHandler::DownloadHandler(const Server::ClientSocket &_client,
+                                                   Server::Files::FileManager &_fm)
+    : client(_client), fm(_fm), buffer(1024 * 1024) {}
 
 Server::Response Server::Handlers::DownloadHandler::handle() {
     std::string filename;
@@ -12,7 +13,7 @@ Server::Response Server::Handlers::DownloadHandler::handle() {
         return not_found_response();
     }
     int file_size = std::filesystem::file_size(std::filesystem::absolute(fm.get_dir() / filename));
-    client.send_bytes(reinterpret_cast<const char*>(&file_size), sizeof(int));
+    client.send_bytes(reinterpret_cast<const char *>(&file_size), sizeof(int));
     while (!file.eof()) {
         file.read(buffer.data(), buffer.size());
         client.send_bytes(buffer.data(), file.gcount());

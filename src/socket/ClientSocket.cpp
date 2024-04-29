@@ -1,8 +1,8 @@
-#include <socket/ClientSocket.h>
 #include <exceptions/SocketExceptions.h>
+#include <socket/ClientSocket.h>
 #include <sys/ioctl.h>
-#include <iostream>
 #include <csignal>
+#include <iostream>
 
 void Server::ClientSocket::send_bytes(const char *bytes_dst, size_t amount) const {
     size_t sent = 0;
@@ -21,10 +21,12 @@ void Server::ClientSocket::send_bytes(const char *bytes_dst, size_t amount) cons
     }
 }
 
-void Server::ClientSocket::read_bytes(char* to, size_t amount) const {
+void Server::ClientSocket::read_bytes(char *to, size_t amount) const {
     ssize_t result = recv(socket_fd, to, amount, MSG_WAITALL);
-    if (result == -1) throw Server::Exceptions::SocketExceptionErrno(*this, errno);
-    if (result != amount) throw Server::Exceptions::ClientDisconnectedException(*this);
+    if (result == -1)
+        throw Server::Exceptions::SocketExceptionErrno(*this, errno);
+    if (result != amount)
+        throw Server::Exceptions::ClientDisconnectedException(*this);
 }
 
 size_t Server::ClientSocket::ready_to_read() const {
@@ -36,7 +38,8 @@ size_t Server::ClientSocket::ready_to_read() const {
     return bytes_available;
 }
 
-Server::ClientSocket::ClientSocket(Server::ClientSocket &&other) noexcept : Socket(other.socket_fd) {
+Server::ClientSocket::ClientSocket(Server::ClientSocket &&other) noexcept
+    : Socket(other.socket_fd) {
     other.socket_fd = -1;
 }
 
@@ -64,7 +67,7 @@ char Server::ClientSocket::read_byte() const {
 }
 
 void Server::ClientSocket::send_bytes(const std::string &bytes) const {
-    send_bytes(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+    send_bytes(reinterpret_cast<const char *>(bytes.data()), bytes.size());
 }
 
 void Server::ClientSocket::send_byte(char byte) const {

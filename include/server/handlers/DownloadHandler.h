@@ -1,23 +1,24 @@
 #ifndef ASYNC_SERVER_EXAMPLE_DOWNLOADHANDLER_H
 #define ASYNC_SERVER_EXAMPLE_DOWNLOADHANDLER_H
 
+#include <files/FileManager.h>
 #include <server/handlers/IHandler.h>
 #include <socket/ClientSocket.h>
-#include <files/FileManager.h>
 #include <fstream>
 
 namespace Server::Handlers {
-    class DownloadHandler final : public IHandler {
-    public:
-        DownloadHandler(const ClientSocket& _client, Files::FileManager& _fm);
+class DownloadHandler final : public IHandler {
+   public:
+    DownloadHandler(const ClientSocket& _client, Files::FileManager& _fm);
 
-        Response handle() override;
-    private:
-        const ClientSocket& client;
-        Files::FileManager& fm;
+    Response handle() override;
 
-        std::vector<char> buffer;
-    };
-}
+   private:
+    const ClientSocket& client;
+    Files::FileManager& fm;
 
-#endif //ASYNC_SERVER_EXAMPLE_DOWNLOADHANDLER_H
+    std::vector<char> buffer;
+};
+}    // namespace Server::Handlers
+
+#endif    //ASYNC_SERVER_EXAMPLE_DOWNLOADHANDLER_H

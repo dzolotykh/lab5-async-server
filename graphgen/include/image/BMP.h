@@ -81,4 +81,4 @@ class BMP {
     };
 };
 
-#endif  // BMP_H
+#endif    // BMP_H

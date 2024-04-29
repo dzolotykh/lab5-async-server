@@ -4,21 +4,21 @@
 #include <string>
 
 namespace Server {
-    struct Response {
-        std::string message;
-    };
+struct Response {
+    std::string message;
+};
 
-    Response create_response(const std::string& message);
+Response create_response(const std::string& message);
 
-    Response not_found_response();
+Response not_found_response();
 
-    Response ok_response();
+Response ok_response();
 
-    Response error_response();
+Response error_response();
 
-    Response bad_request_response();
+Response bad_request_response();
 
-    Response empty_response();
-}
+Response empty_response();
+}    // namespace Server
 
-#endif //ASYNC_SERVER_EXAMPLE_RESPONSE_H
+#endif    //ASYNC_SERVER_EXAMPLE_RESPONSE_H

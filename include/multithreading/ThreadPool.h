@@ -10,7 +10,6 @@
 #include <queue>
 #include <utility>
 
-
 namespace Server::Multithreading {
 class ThreadPool {
    public:
@@ -52,7 +51,8 @@ class ThreadPool {
     explicit ThreadPool(size_t _threads_count);
 
     template <typename F, typename... Args>
-    auto add_task(F&& task, Args&&... args) -> std::future<std::invoke_result_t<std::decay_t<F>, Args...>> {
+    auto add_task(F&& task, Args&&... args)
+        -> std::future<std::invoke_result_t<std::decay_t<F>, Args...>> {
         using return_t = std::invoke_result_t<std::decay_t<F>, Args...>;
         auto promise = std::make_shared<std::promise<return_t>>();
         auto future = promise->get_future();

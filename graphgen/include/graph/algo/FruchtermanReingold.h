@@ -1,9 +1,9 @@
 #ifndef FRUCHTERMANREINGOLD_H
 #define FRUCHTERMANREINGOLD_H
 
-#include <type_traits>
-#include <math/structures.h>
 #include <graph/Graph.h>
+#include <math/structures.h>
+#include <type_traits>
 
 // class that executes Fruchterman&Reingold algorithm with the provided graph
 // you can read about it here: https://reingold.co/force-directed.pdf
@@ -38,10 +38,10 @@ class FruchtermanReingold {
     std::vector<Vector2D> offset_;
     std::vector<Point2D> positions_;
 
-    inline double fa(double x) const noexcept;  // technical function for the algorithm
-    inline double fr(double x) const noexcept;  // technical functions for the algorithm
-    void run_iter() noexcept;                   // runs iteration of algorithm
-    void scale() noexcept;                      // scales all positions with image size
+    inline double fa(double x) const noexcept;    // technical function for the algorithm
+    inline double fr(double x) const noexcept;    // technical functions for the algorithm
+    void run_iter() noexcept;                     // runs iteration of algorithm
+    void scale() noexcept;                        // scales all positions with image size
 };
 
-#endif  // FRUCHTERMANREINGOLD_H
+#endif    // FRUCHTERMANREINGOLD_H

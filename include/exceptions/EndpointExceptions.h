@@ -5,23 +5,22 @@
 #include <utility>
 
 namespace Server::Exceptions {
-    class EndpointException : public std::exception {
-    public:
-        explicit EndpointException(std::string message) : message(std::move(message)) {}
+class EndpointException : public std::exception {
+   public:
+    explicit EndpointException(std::string message) : message(std::move(message)) {}
 
-        [[nodiscard]] const char* what() const noexcept override {
-            return message.c_str();
-        }
+    [[nodiscard]] const char* what() const noexcept override { return message.c_str(); }
 
-    private:
-        std::string message;
-    };
+   private:
+    std::string message;
+};
 
-    class EndpointNotFoundException : public EndpointException {
-    public:
-        explicit EndpointNotFoundException(char endpoint_byte) : EndpointException("Endpoint not found: " + std::to_string(endpoint_byte)) {}
-    };
+class EndpointNotFoundException : public EndpointException {
+   public:
+    explicit EndpointNotFoundException(char endpoint_byte)
+        : EndpointException("Endpoint not found: " + std::to_string(endpoint_byte)) {}
+};
 
-}
+}    // namespace Server::Exceptions
 
-#endif //ASYNC_SERVER_EXAMPLE_ENDPOINTEXCEPTIONS_H
+#endif    //ASYNC_SERVER_EXAMPLE_ENDPOINTEXCEPTIONS_H

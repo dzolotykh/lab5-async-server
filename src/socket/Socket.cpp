@@ -1,8 +1,8 @@
-#include <socket/Socket.h>
 #include <exceptions/SocketExceptions.h>
 #include <netinet/tcp.h>
+#include <socket/Socket.h>
 
-Server::Socket::Socket(Server::Socket::fd _socket_fd): socket_fd(_socket_fd) {}
+Server::Socket::Socket(Server::Socket::fd _socket_fd) : socket_fd(_socket_fd) {}
 
 Server::Socket::~Socket() noexcept {
     if (socket_fd != -1) {

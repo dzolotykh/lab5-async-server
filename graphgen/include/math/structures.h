@@ -48,4 +48,4 @@ Point2D operator-(const Point2D& l, const Vector2D& s) noexcept;
 
 Vector2D operator-(const Point2D& l, const Point2D& s) noexcept;
 
-#endif  // STRUCTURES_H
+#endif    // STRUCTURES_H

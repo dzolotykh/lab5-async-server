@@ -1,14 +1,14 @@
-#include <iostream>
-#include <socket/ListenerSocket.h>
-#include <socket/ClientSocket.h>
 #include <exceptions/SocketExceptions.h>
-#include <thread>
-#include <server/Server.h>
-#include <server/handlers/UploadHandler.h>
 #include <files/FileManager.h>
-#include "server/handlers/EchoHandler.h"
+#include <server/Server.h>
 #include <server/handlers/DownloadHandler.h>
 #include <server/handlers/GenerationHandler.h>
+#include <server/handlers/UploadHandler.h>
+#include <socket/ClientSocket.h>
+#include <socket/ListenerSocket.h>
+#include <iostream>
+#include <thread>
+#include "server/handlers/EchoHandler.h"
 
 int main() {
     Server::Files::FileManager fm("../uploads");

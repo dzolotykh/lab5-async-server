@@ -3,9 +3,9 @@
 // function for drawing graph
 void draw_graph(const std::string& path, const std::vector<Point2D>& positions, const Graph& g,
                 size_t width, size_t height, size_t scale) {
-    BMP image(width, height);  // create image
+    BMP image(width, height);    // create image
     for (auto i : positions) {
-        image.draw_circle(static_cast<int>(i.x), static_cast<int>(i.y), 10);  // draws vertex
+        image.draw_circle(static_cast<int>(i.x), static_cast<int>(i.y), 10);    // draws vertex
     }
 
     // draw edges

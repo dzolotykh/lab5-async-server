@@ -5,7 +5,8 @@
 #include "multithreading/ThreadPool.h"
 #include <iostream>
 
-Server::Multithreading::ThreadPool::ThreadPool(size_t _threads_count) : threads(_threads_count), threads_count(_threads_count) {
+Server::Multithreading::ThreadPool::ThreadPool(size_t _threads_count)
+    : threads(_threads_count), threads_count(_threads_count) {
     std::cout << _threads_count << std::endl;
     for (size_t i = 0; i < threads_count; ++i) {
         threads[i] = std::thread([this] {

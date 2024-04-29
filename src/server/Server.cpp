@@ -1,9 +1,10 @@
 #include <server/Server.h>
-#include "exceptions/SocketExceptions.h"
-#include <iostream>
 #include <csignal>
+#include <iostream>
+#include "exceptions/SocketExceptions.h"
 
-Server::Server::Server(uint16_t port, int max_connections, int _tp_size): listener_socket(port, max_connections), tp(_tp_size) {
+Server::Server::Server(uint16_t port, int max_connections, int _tp_size)
+    : listener_socket(port, max_connections), tp(_tp_size) {
     signal(SIGPIPE, SIG_IGN);
 }
 
@@ -20,7 +21,8 @@ void Server::Server::start() {
             } catch (const std::exception& err) {
                 std::cout << err.what() << std::endl;
             }
-            std::cout << "Пользователь на сокете " << client->get_fd() << " обработан." << std::endl;
+            std::cout << "Пользователь на сокете " << client->get_fd() << " обработан."
+                      << std::endl;
         });
     }
 }
@@ -38,14 +40,7 @@ void Server::Server::handle_client(const ClientSocket& client) {
         client.send_bytes(response.message);
     } catch (Exceptions::ClientDisconnectedException& e) {
         // Do nothing
-    } catch (Exceptions::SocketException& e) {
-
-    }
+    } catch (Exceptions::SocketException& e) {}
 }
 
-void Server::Server::stop() {
-
-}
-
-
-
+void Server::Server::stop() {}

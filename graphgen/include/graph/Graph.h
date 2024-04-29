@@ -23,4 +23,4 @@ class Graph {
     containerT g_;
 };
 
-#endif  // GRAPH_H
+#endif    // GRAPH_H

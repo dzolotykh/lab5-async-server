@@ -1,6 +1,6 @@
 #include <image/BMP.h>
-#include <algorithm>
 #include <image/DigitsDrawer.h>
+#include <algorithm>
 
 BMP::BMP(size_t _width, size_t _height)
     : width(_width), height(_height), pixels(_width * _height * 3) {
@@ -112,8 +112,8 @@ void BMP::draw_number(size_t x, size_t y, int number, size_t scale) {
     std::reverse(digits.begin(), digits.end());
     size_t add = 0;
     for (auto digit : digits) {
-        DigitsDrawer::draw_digit(x, y + add, digit,
-                                 [this](size_t x, size_t y) { draw_pixel(x, y); }, scale);
+        DigitsDrawer::draw_digit(
+            x, y + add, digit, [this](size_t x, size_t y) { draw_pixel(x, y); }, scale);
         add += between_digits_offset * scale;
     }
 }

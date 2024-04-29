@@ -61,7 +61,7 @@ void FruchtermanReingold::scale() noexcept {
 }
 
 void FruchtermanReingold::run_iter() noexcept {
-    std::fill(offset_.begin(), offset_.end(), Vector2D(0, 0));  // clear offsets
+    std::fill(offset_.begin(), offset_.end(), Vector2D(0, 0));    // clear offsets
 
     // compute repulsive forces
     for (Graph::vertexT v = 0; v < g_.size(); ++v) {

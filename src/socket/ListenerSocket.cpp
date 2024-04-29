@@ -1,9 +1,9 @@
-#include <socket/ListenerSocket.h>
-#include <netinet/tcp.h>
 #include <exceptions/SocketExceptions.h>
+#include <netinet/tcp.h>
+#include <socket/ListenerSocket.h>
 #include <memory>
 
-Server::ListenerSocket::ListenerSocket(uint16_t port, int max_connections): Socket(-1) {
+Server::ListenerSocket::ListenerSocket(uint16_t port, int max_connections) : Socket(-1) {
     sockaddr_in socket_address{};
     socket_address.sin_family = AF_INET;
     socket_address.sin_port = htons(port);
@@ -21,7 +21,8 @@ Server::ListenerSocket::ListenerSocket(uint16_t port, int max_connections): Sock
     socket_fd = fd;
 }
 
-Server::ListenerSocket::ListenerSocket(Server::ListenerSocket &&other) noexcept : Socket(other.socket_fd) {
+Server::ListenerSocket::ListenerSocket(Server::ListenerSocket &&other) noexcept
+    : Socket(other.socket_fd) {
     other.socket_fd = -1;
 }
 
