@@ -3,6 +3,7 @@
 
 #include <exceptions/EndpointExceptions.h>
 #include <files/FileManager.h>
+#include <logging/Logger.h>
 #include <server/handlers/IHandler.h>
 #include <socket/ClientSocket.h>
 #include <fstream>

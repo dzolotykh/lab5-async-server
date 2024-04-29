@@ -5,6 +5,7 @@
 #include <exceptions/SocketExceptions.h>
 #include <files/FileManager.h>
 #include <graphgen.h>
+#include <logging/Logger.h>
 #include <multithreading/ThreadPool.h>
 #include <server/handlers/IHandler.h>
 #include <socket/ClientSocket.h>

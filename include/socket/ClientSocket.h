@@ -25,6 +25,7 @@ class ClientSocket : public Socket {
     [[nodiscard]] std::vector<char> read_bytes(size_t amount) const;
     [[nodiscard]] char read_byte() const;
     [[nodiscard]] size_t ready_to_read() const;
+    [[nodiscard]] std::string get_info() const;
 
     ~ClientSocket();
 

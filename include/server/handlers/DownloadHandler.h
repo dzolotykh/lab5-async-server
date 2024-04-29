@@ -2,6 +2,7 @@
 #define ASYNC_SERVER_EXAMPLE_DOWNLOADHANDLER_H
 
 #include <files/FileManager.h>
+#include <logging/Logger.h>
 #include <server/handlers/IHandler.h>
 #include <socket/ClientSocket.h>
 #include <fstream>

@@ -14,42 +14,51 @@ Server::Server::~Server() {
 
 void Server::Server::start() {
     std::vector<std::future<void>> clients;
+    auto& logger = *Logging::Logger::get_instance();
     while (is_running) {
         auto client = listener_socket.accept_client(1);
         if (client == nullptr) {
             continue;
         }
-        clients.push_back(tp.add_task([this, client]() {
+        clients.push_back(tp.add_task([this, client, &logger]() {
             try {
                 handle_client(*client);
             } catch (const std::exception& err) {
-                std::cout << err.what() << std::endl;
+                logger << "Ошибка при работе с пользователем " + client->get_info() + ": " +
+                              err.what()
+                       << "\n";
             }
-            std::cout << "Пользователь на сокете " << client->get_fd() << " обработан."
-                      << std::endl;
+            logger << "Пользователь " + client->get_info() + " отключился\n";
         }));
     }
-    std::cout << "Ожидание завершения всех клиентов..." << std::endl;
+    logger << "Ожидание завершения всех клиентов\n";
     for (auto& client : clients) {
         client.get();
     }
-    std::cout << "Сервер завершил выполнение" << std::endl;
+    logger << "Все клиенты отключились\n";
 }
 
 void Server::Server::handle_client(const ClientSocket& client) {
-    std::cout << "Handling client: " << client.get_fd() << "\n";
+    auto& logger = *Logging::Logger::get_instance();
+    logger << "Пользователь " + client.get_info() + " подключился\n";
     char endpoint_byte = client.read_byte();
     if (endpoints.find(endpoint_byte) == endpoints.end()) {
+        logger << "Пользователь " + client.get_info() + " отправил неизвестный запрос\n";
         client.send_bytes("Unknown endpoint");
         return;
     }
     auto handler = endpoints[endpoint_byte](client);
+    logger << "Пользователь " + client.get_info() + " отправил запрос на эндпоинт " +
+                  endpoint_byte + "\n";
     try {
         auto response = handler->handle();
         client.send_bytes(response.message);
     } catch (Exceptions::ClientDisconnectedException& e) {
-        // Do nothing
-    } catch (Exceptions::SocketException& e) {}
+        logger << "Пользователь " + client.get_info() + " отключился\n";
+    } catch (Exceptions::SocketException& e) {
+        logger << "Ошибка при работе с пользователем " + client.get_info() + ": " + e.what()
+               << "\n";
+    }
 }
 
 void Server::Server::stop() {

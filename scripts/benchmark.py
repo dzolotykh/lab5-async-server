@@ -9,8 +9,8 @@ import concurrent.futures
 
 
 def connect_to_server():
-    PORT = 8081
-    HOST = '77.221.158.36'
+    PORT = 8080
+    HOST = '127.0.0.1'
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serversocket.connect((HOST, PORT))
     return serversocket

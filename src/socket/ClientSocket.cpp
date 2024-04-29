@@ -73,3 +73,7 @@ void Server::ClientSocket::send_bytes(const std::string &bytes) const {
 void Server::ClientSocket::send_byte(char byte) const {
     send_bytes(&byte, 1);
 }
+
+std::string Server::ClientSocket::get_info() const {
+    return "IP: " + get_ip() + ", сокет: " + std::to_string(get_fd());
+}
