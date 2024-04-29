@@ -3,6 +3,7 @@
 
 #include <socket/Socket.h>
 #include <socket/ClientSocket.h>
+#include <memory>
 
 namespace Server {
     class ListenerSocket: public Socket {

@@ -1,6 +1,7 @@
 #include <socket/ListenerSocket.h>
 #include <netinet/tcp.h>
 #include <exceptions/SocketExceptions.h>
+#include <memory>
 
 Server::ListenerSocket::ListenerSocket(uint16_t port, int max_connections): Socket(-1) {
     sockaddr_in socket_address{};

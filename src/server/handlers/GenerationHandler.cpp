@@ -1,7 +1,7 @@
 #include <server/handlers/GenerationHandler.h>
 
 namespace Server::Handlers {
-    GenerationHandler::GenerationHandler(const Server::ClientSocket &_client, Files::FileManager& _fm, int num_threads): client(_client), tp(num_threads), fm(_fm) {
+    GenerationHandler::GenerationHandler(const Server::ClientSocket &_client, Files::FileManager& _fm, Multithreading::ThreadPool& _tp): client(_client), tp(_tp), fm(_fm) {
         input_data.resize(32);
     }
 

@@ -5,7 +5,7 @@
 #include <filesystem>
 
 std::string get_path(int digit) {
-    std::__fs::filesystem::path path = std::__fs::filesystem::current_path() / "resources" / "digits";
+    std::filesystem::path path = std::filesystem::current_path() / "resources" / "digits";
     return path / (std::to_string(digit) + ".txt");
 }
 

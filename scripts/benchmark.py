@@ -4,6 +4,7 @@ from random import randint, shuffle
 import time
 import subprocess
 
+
 async def connect_to_server():
     PORT = 8080
     HOST = '127.0.0.1'
@@ -16,7 +17,7 @@ async def read_graph() -> list[list[int]]:
         return [list(map(int, i.split())) for i in str(f.read()).split('\n')]
 
 
-async def generate_request_string():
+async def generate_upload_request_string():
     graph = await read_graph()
     v, e = graph[0]
     graph = graph[1:]
@@ -37,10 +38,19 @@ async def send_upload_request(request_string: bytes):
     return response.decode()
 
 
+async def send_generation_request(request_string: bytes):
+    reader, writer = await connect_to_server()
+    writer.write(request_string)
+    await writer.drain()
+    response = await reader.read(1024)
+    writer.close()
+    return response.decode()
+
+
 async def time_upload(times=100):
     total_time = 0
     for i in range(times):
-        s = await generate_request_string()
+        s = await generate_upload_request_string()
         start = time.time_ns()
         await send_upload_request(s)
         finish = time.time_ns()
@@ -49,7 +59,7 @@ async def time_upload(times=100):
     return total_time / times
 
 
-async def main(test_num = 1):
+async def main(test_num=1):
     test_times = []
     for i in range(test_num):
         tasks = [time_upload() for _ in range(10)]

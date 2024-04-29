@@ -1,10 +1,10 @@
 #include <server/Response.h>
 namespace Server {
-    Response Server::create_response(const std::string &message) {
+    Response create_response(const std::string &message) {
         return Response{message};
     }
 
-    Response Server::not_found_response() {
+    Response not_found_response() {
         return create_response("not found");
     }
 

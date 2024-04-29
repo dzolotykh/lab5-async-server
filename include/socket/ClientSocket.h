@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <socket/Socket.h>
 #include <sys/socket.h>
+#include <vector>
 
 namespace Server {
     class ClientSocket: public Socket {

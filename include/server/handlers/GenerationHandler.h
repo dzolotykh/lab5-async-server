@@ -14,13 +14,13 @@
 namespace Server::Handlers {
     class GenerationHandler final : public IHandler {
     public:
-        GenerationHandler(const ClientSocket& _client, Files::FileManager& _fm, int num_threads);
+        GenerationHandler(const ClientSocket& _client, Files::FileManager& _fm, Multithreading::ThreadPool& _tp);
 
         Response handle() override;
     private:
         const ClientSocket& client;
         Files::FileManager& fm;
-        Multithreading::ThreadPool tp;
+        Multithreading::ThreadPool& tp;
         std::string input_data;
     };
 }

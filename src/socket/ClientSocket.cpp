@@ -2,6 +2,7 @@
 #include <exceptions/SocketExceptions.h>
 #include <sys/ioctl.h>
 #include <iostream>
+#include <csignal>
 
 void Server::ClientSocket::send_bytes(const char *bytes_dst, size_t amount) const {
     size_t sent = 0;
