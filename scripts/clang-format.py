@@ -3,7 +3,6 @@
 import glob
 import subprocess
 
-format_cmd = 'clang-format -style=file -i '
 filenames = []
 
 for filename in glob.glob('./**', recursive=True):

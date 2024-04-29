@@ -12,9 +12,11 @@
 
 int main() {
     Server::Files::FileManager fm("../uploads");
+    const int num_threads = 8;
+    const int num_threads_in_generation = 8;
     try {
-        Server::Server server(8080, 10, 5);
-        Server::Multithreading::ThreadPool pool(4);
+        Server::Server server(8080, 1024, num_threads);
+        Server::Multithreading::ThreadPool pool(num_threads_in_generation);
         server.set_endpoint<Server::Handlers::EchoHandler>('e');
         server.set_endpoint<Server::Handlers::UploadHandler>('u', fm);
         server.set_endpoint<Server::Handlers::DownloadHandler>('d', fm);
