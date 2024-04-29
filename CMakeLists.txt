@@ -40,6 +40,8 @@ add_executable(async-server-example
         src/server/handlers/GenerationHandler.cpp
         src/server/handlers/GenerationHandler.cpp
         include/exceptions/GenerationExceptions.h
+        include/server/handlers/AmogusHandler.h
+        src/server/handlers/AmogusHandler.cpp
 )
 target_link_libraries(async-server-example graphgen)
 

@@ -9,6 +9,7 @@
 #include <iostream>
 #include <thread>
 #include "server/handlers/EchoHandler.h"
+#include <server/handlers/AmogusHandler.h>
 
 int main() {
     Server::Files::FileManager fm("../uploads");
@@ -21,6 +22,7 @@ int main() {
         server.set_endpoint<Server::Handlers::UploadHandler>('u', fm);
         server.set_endpoint<Server::Handlers::DownloadHandler>('d', fm);
         server.set_endpoint<Server::Handlers::GenerationHandler>('g', fm, pool);
+        server.set_endpoint<Server::Handlers::Sus::AmogusHandler>('i');
         server.start();
     } catch (std::exception& e) {
         std::cerr << "An error occurred: " << e.what() << std::endl;
