@@ -2,9 +2,15 @@
 
 Server::Response Server::Handlers::Sus::AmogusHandler::handle() {
     client.send_bytes(SUSSY_BAKA);
-
+    client.send_bytes("\n");
     std::ifstream file("amogus.txt");
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    client.send_bytes("3..\n");
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    client.send_bytes("2..\n");
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    client.send_bytes("1..\n");
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     std::vector<std::string> frames;
     std::string buff;
     for (std::string line; std::getline(file, line);) {
@@ -22,7 +28,7 @@ Server::Response Server::Handlers::Sus::AmogusHandler::handle() {
                 for (int i = 0; i < 26; i++) {
                     client.send_bytes("\033[A");
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                std::this_thread::sleep_for(std::chrono::milliseconds(60));
             }
         }
     }

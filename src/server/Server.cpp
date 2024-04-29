@@ -13,18 +13,26 @@ Server::Server::~Server() {
 }
 
 void Server::Server::start() {
-    while (true) {
-        auto client = listener_socket.accept_client();
-        tp.add_task([this, client]() {
+    std::vector<std::future<void>> clients;
+    while (is_running) {
+        auto client = listener_socket.accept_client(1);
+        if (client == nullptr) {
+            continue;
+        }
+        clients.push_back(tp.add_task([this, client]() {
             try {
                 handle_client(*client);
             } catch (const std::exception& err) {
                 std::cout << err.what() << std::endl;
             }
-            std::cout << "Пользователь на сокете " << client->get_fd() << " обработан."
-                      << std::endl;
-        });
+            std::cout << "Пользователь на сокете " << client->get_fd() << " обработан." << std::endl;
+        }));
     }
+    std::cout << "Ожидание завершения всех клиентов..." << std::endl;
+    for (auto& client : clients) {
+        client.get();
+    }
+    std::cout << "Сервер завершил выполнение" << std::endl;
 }
 
 void Server::Server::handle_client(const ClientSocket& client) {
@@ -43,4 +51,6 @@ void Server::Server::handle_client(const ClientSocket& client) {
     } catch (Exceptions::SocketException& e) {}
 }
 
-void Server::Server::stop() {}
+void Server::Server::stop() {
+    is_running = false;
+}

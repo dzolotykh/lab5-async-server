@@ -8,8 +8,8 @@
 #include <server/handlers/IHandler.h>
 #include <socket/ClientSocket.h>
 #include <socket/ListenerSocket.h>
-
 #include <functional>
+#include <unordered_map>
 
 namespace Server {
 class Server {
@@ -41,6 +41,8 @@ class Server {
     ListenerSocket listener_socket;
     std::unordered_map<char, handler_provider_t> endpoints;
     Multithreading::ThreadPool tp;
+
+    bool is_running = true;
 
     void handle_client(const ClientSocket& client);
 };

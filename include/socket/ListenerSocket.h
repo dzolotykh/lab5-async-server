@@ -17,7 +17,7 @@ class ListenerSocket : public Socket {
 
     ListenerSocket(uint16_t port, int max_connections);
 
-    [[nodiscard]] std::shared_ptr<ClientSocket> accept_client() const;
+    [[nodiscard]] std::shared_ptr<ClientSocket> accept_client(int timeout) const;
 };
 }    // namespace Server
 
