@@ -10,8 +10,9 @@ class IHandler {
     virtual Response handle() = 0;
     virtual ~IHandler() = default;
 
-protected:
+   protected:
     explicit IHandler(const ClientSocket& _client) : client(_client) {}
+
     const ClientSocket& client;
 };
 }    // namespace Server::Handlers

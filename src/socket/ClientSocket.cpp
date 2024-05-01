@@ -81,7 +81,7 @@ std::string Server::ClientSocket::get_info() const {
 std::string Server::ClientSocket::get_ip() const {
     sockaddr_in addr{};
     socklen_t addr_len = sizeof(addr);
-    int result = getpeername(socket_fd, reinterpret_cast<sockaddr*>(&addr), &addr_len);
+    int result = getpeername(socket_fd, reinterpret_cast<sockaddr *>(&addr), &addr_len);
     if (result == -1) {
         throw Server::Exceptions::SocketExceptionErrno(*this, errno);
     }

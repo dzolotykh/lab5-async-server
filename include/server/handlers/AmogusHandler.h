@@ -11,7 +11,9 @@
 namespace Server::Handlers::Sus {
 class AmogusHandler final : public IHandler {
    public:
-    explicit AmogusHandler(const ClientSocket& client) : IHandler(client) { client.send_bytes("AMOGUS\n"); };
+    explicit AmogusHandler(const ClientSocket& client) : IHandler(client) {
+        client.send_bytes("AMOGUS\n");
+    };
 
     Response handle() override;
 

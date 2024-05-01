@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace Server {
-class ClientSocket final: public Socket {
+class ClientSocket final : public Socket {
    public:
     ClientSocket() = delete;
     ClientSocket(const ClientSocket& other) = delete;

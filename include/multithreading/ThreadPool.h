@@ -12,9 +12,9 @@
 
 namespace Server::Multithreading {
 class ThreadPool {
-private:
+   private:
     class Task {
-    public:
+       public:
         template <typename F, typename... Args>
         Task(F&& _task,
              std::shared_ptr<std::promise<decltype(_task(std::declval<Args>()...))>>&& promise_ptr,
@@ -37,9 +37,10 @@ private:
 
         void operator()() { task(); }
 
-    private:
+       private:
         std::function<void()> task;
     };
+
    public:
     ThreadPool() = delete;
     ThreadPool(const ThreadPool& other) = delete;
