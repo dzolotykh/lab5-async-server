@@ -9,7 +9,6 @@
 #include <optional>
 #include <queue>
 #include <utility>
-#include <logging/Logger.h>
 
 namespace Server::Multithreading {
 class ThreadPool {
@@ -26,9 +25,6 @@ class ThreadPool {
                     try {
                         std::apply(_task, args);
                     } catch (const std::exception& e) {
-
-                        auto& logger = *Server::Logging::Logger::get_instance();
-                        logger << "❌ Ошибка в потоке: " + std::string(e.what()) + "\n";
                         pr->set_exception(std::current_exception());
                         return;
                     }

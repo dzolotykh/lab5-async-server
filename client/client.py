@@ -42,8 +42,8 @@ def save_file(to, token):
             f.write(data)
     socket.close()
 
-input_file = 'input/big-graph.txt'
+input_file = 'input/graph-1.txt'
 token = upload_data(input_file)
 generation_token = generate_request(token)
 print(generation_token)
-save_file('output/bamboo.bmp', generation_token)
+save_file('output/graph-1.bmp', generation_token)

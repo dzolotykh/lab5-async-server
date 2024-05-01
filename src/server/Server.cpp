@@ -1,6 +1,5 @@
 #include <server/Server.h>
 #include <csignal>
-#include <iostream>
 #include "exceptions/SocketExceptions.h"
 
 Server::Server::Server(uint16_t port, int max_connections, int _tp_size)
