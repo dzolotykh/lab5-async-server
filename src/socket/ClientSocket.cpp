@@ -14,7 +14,7 @@ void Server::ClientSocket::send_bytes(const char *bytes_dst, size_t amount) cons
             continue;
         }
 
-        if (errno == ECONNRESET || errno == SIGPIPE) {
+        if (errno == ECONNRESET || errno == SIGPIPE || errno == EPIPE) {
             throw Server::Exceptions::ClientDisconnectedException(*this);
         }
         throw Server::Exceptions::SocketExceptionErrno(*this, errno);
@@ -23,8 +23,12 @@ void Server::ClientSocket::send_bytes(const char *bytes_dst, size_t amount) cons
 
 void Server::ClientSocket::read_bytes(char *to, size_t amount) const {
     ssize_t result = recv(socket_fd, to, amount, MSG_WAITALL);
-    if (result == -1)
+    if (result == -1) {
+        if (errno == ECONNRESET || errno == SIGPIPE || errno == EPIPE) {
+            throw Server::Exceptions::ClientDisconnectedException(*this);
+        }
         throw Server::Exceptions::SocketExceptionErrno(*this, errno);
+    }
     if (result != amount)
         throw Server::Exceptions::ClientDisconnectedException(*this);
 }
@@ -78,7 +82,7 @@ std::string Server::ClientSocket::get_info() const {
     return "IP: " + get_ip() + ", сокет: " + std::to_string(get_fd());
 }
 
-std::string Server::ClientSocket::get_ip() const {
+std::string Server::ClientSocket::load_ip() const {
     sockaddr_in addr{};
     socklen_t addr_len = sizeof(addr);
     int result = getpeername(socket_fd, reinterpret_cast<sockaddr *>(&addr), &addr_len);
@@ -88,4 +92,8 @@ std::string Server::ClientSocket::get_ip() const {
     char ip[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &addr.sin_addr, ip, INET_ADDRSTRLEN);
     return {ip};
+}
+
+std::string Server::ClientSocket::get_ip() const {
+    return ip;
 }

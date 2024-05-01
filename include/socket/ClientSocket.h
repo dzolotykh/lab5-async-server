@@ -25,15 +25,18 @@ class ClientSocket final : public Socket {
     [[nodiscard]] std::vector<char> read_bytes(size_t amount) const;
     [[nodiscard]] char read_byte() const;
     [[nodiscard]] size_t ready_to_read() const;
-
     [[nodiscard]] std::string get_ip() const;
     [[nodiscard]] std::string get_info() const;
 
     ~ClientSocket();
 
    private:
-    explicit ClientSocket(fd _socket_fd) : Socket(_socket_fd) {}
+    explicit ClientSocket(fd _socket_fd) : Socket(_socket_fd), ip(load_ip()) {}
     friend class ListenerSocket;
+
+    std::string ip;
+    [[nodiscard]] std::string load_ip() const;
+
 };
 }    // namespace Server
 

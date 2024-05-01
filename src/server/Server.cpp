@@ -22,13 +22,13 @@ void Server::Server::start() {
         }
         clients.push_back(tp.add_task([this, client, &logger]() {
             try {
+
                 handle_client(*client);
             } catch (const std::exception& err) {
                 logger << "Ошибка при работе с пользователем " + client->get_info() + ": " +
                               err.what()
-                       << "\n";
+                       + "\n";
             }
-            logger << "Пользователь " + client->get_info() + " отключился\n";
         }));
     }
     logger << "Ожидание завершения всех клиентов\n";
@@ -36,7 +36,7 @@ void Server::Server::start() {
         try {
             client.get();
         } catch (const std::exception& err) {
-            logger << "Ошибка при работе с пользователем: " + std::string(err.what()) << "\n";
+            logger << "Ошибка при работе с пользователем: " + std::string(err.what()) + "\n";
         }
     }
     logger << "Все клиенты отключились\n";
@@ -56,12 +56,14 @@ void Server::Server::handle_client(const ClientSocket& client) {
                   endpoint_byte + "\n";
     try {
         auto response = handler->handle();
-        client.send_bytes(response.message);
+        if (!response.message.empty()) {
+            client.send_bytes(response.message);
+        }
+        logger << "Пользователь " + client.get_info() + " отключился\n";
     } catch (Exceptions::ClientDisconnectedException& e) {
         logger << "Пользователь " + client.get_info() + " отключился\n";
     } catch (Exceptions::SocketException& e) {
-        logger << "Ошибка при работе с пользователем " + client.get_info() + ": " + e.what()
-               << "\n";
+        logger << "Ошибка при работе с пользователем " + client.get_info() + ": " + e.what() + "\n";
     }
 }
 
