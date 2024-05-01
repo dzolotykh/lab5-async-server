@@ -7,3 +7,6 @@ uploads
 .DS_Store
 .env
 cmake-build-debug-linux
+client/output
+cmake-build-release
+cmake-build-debug
