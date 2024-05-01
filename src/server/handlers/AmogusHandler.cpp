@@ -4,6 +4,9 @@ Server::Response Server::Handlers::Sus::AmogusHandler::handle() {
     client.send_bytes(SUSSY_BAKA);
     client.send_bytes("\n");
     std::ifstream file("amogus.txt");
+    if (!file.is_open()) {
+        return create_response("no amogus.txt for animation found:(");
+    }
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     client.send_bytes("3..\n");
     std::this_thread::sleep_for(std::chrono::milliseconds(500));

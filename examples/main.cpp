@@ -21,6 +21,7 @@ class ServerRunner {
     ServerRunner() {
         instance = this;
         std::signal(SIGTERM, sigterm_handler);
+        std::signal(SIGINT, sigterm_handler);
     };
 
     static void sigterm_handler(int) {
