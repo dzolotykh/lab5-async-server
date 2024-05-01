@@ -6,7 +6,7 @@
 #include <memory>
 
 namespace Server {
-class ListenerSocket : public Socket {
+class ListenerSocket final : public Socket {
    public:
     ListenerSocket() = delete;
     ListenerSocket(const ListenerSocket& other) = delete;

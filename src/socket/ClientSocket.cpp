@@ -77,3 +77,15 @@ void Server::ClientSocket::send_byte(char byte) const {
 std::string Server::ClientSocket::get_info() const {
     return "IP: " + get_ip() + ", сокет: " + std::to_string(get_fd());
 }
+
+std::string Server::ClientSocket::get_ip() const {
+    sockaddr_in addr{};
+    socklen_t addr_len = sizeof(addr);
+    int result = getpeername(socket_fd, reinterpret_cast<sockaddr*>(&addr), &addr_len);
+    if (result == -1) {
+        throw Server::Exceptions::SocketExceptionErrno(*this, errno);
+    }
+    char ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &addr.sin_addr, ip, INET_ADDRSTRLEN);
+    return {ip};
+}

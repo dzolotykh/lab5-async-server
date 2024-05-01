@@ -15,7 +15,6 @@ class DownloadHandler final : public IHandler {
     Response handle() override;
 
    private:
-    const ClientSocket& client;
     Files::FileManager& fm;
 
     std::vector<char> buffer;

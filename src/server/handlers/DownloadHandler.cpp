@@ -2,7 +2,7 @@
 
 Server::Handlers::DownloadHandler::DownloadHandler(const Server::ClientSocket &_client,
                                                    Server::Files::FileManager &_fm)
-    : client(_client), fm(_fm), buffer(1024 * 1024) {}
+    : IHandler(_client), fm(_fm), buffer(1024 * 1024) {}
 
 Server::Response Server::Handlers::DownloadHandler::handle() {
     auto &logger = *Logging::Logger::get_instance();

@@ -8,12 +8,9 @@
 namespace Server::Handlers {
 class EchoHandler final : public IHandler {
    public:
-    explicit EchoHandler(const ClientSocket& _client) : client(_client) {}
+    explicit EchoHandler(const ClientSocket& _client) : IHandler(_client) {}
 
     Response handle() override;
-
-   private:
-    const ClientSocket& client;
 };
 }    // namespace Server::Handlers
 

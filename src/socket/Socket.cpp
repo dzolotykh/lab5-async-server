@@ -13,15 +13,3 @@ Server::Socket::~Socket() noexcept {
 Server::Socket::fd Server::Socket::get_fd() const noexcept {
     return socket_fd;
 }
-
-std::string Server::Socket::get_ip() const {
-    sockaddr_in addr{};
-    socklen_t addr_len = sizeof(addr);
-    int result = getpeername(socket_fd, reinterpret_cast<sockaddr*>(&addr), &addr_len);
-    if (result == -1) {
-        throw Server::Exceptions::SocketExceptionErrno(*this, errno);
-    }
-    char ip[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &addr.sin_addr, ip, INET_ADDRSTRLEN);
-    return {ip};
-}

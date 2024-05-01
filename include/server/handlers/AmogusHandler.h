@@ -11,12 +11,11 @@
 namespace Server::Handlers::Sus {
 class AmogusHandler final : public IHandler {
    public:
-    AmogusHandler(const ClientSocket& client) : client(client) { client.send_bytes("AMOGUS\n"); };
+    explicit AmogusHandler(const ClientSocket& client) : IHandler(client) { client.send_bytes("AMOGUS\n"); };
 
     Response handle() override;
 
    private:
-    const ClientSocket& client;
     const std::string SUSSY_BAKA =
         "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣤⣤⣤⣤⣤⣶⣦⣤⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀ \n"
         "⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⡿⠛⠉⠙⠛⠛⠛⠛⠻⢿⣿⣷⣤⡀⠀⠀⠀⠀⠀ \n"

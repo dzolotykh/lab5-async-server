@@ -21,7 +21,6 @@ class GenerationHandler final : public IHandler {
     Response handle() override;
 
    private:
-    const ClientSocket& client;
     Files::FileManager& fm;
     Multithreading::ThreadPool& tp;
     std::string input_data;

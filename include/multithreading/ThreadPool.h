@@ -12,34 +12,35 @@
 
 namespace Server::Multithreading {
 class ThreadPool {
-   public:
+private:
     class Task {
-       public:
+    public:
         template <typename F, typename... Args>
         Task(F&& _task,
              std::shared_ptr<std::promise<decltype(_task(std::declval<Args>()...))>>&& promise_ptr,
              Args&&... args) {
             task = [_task = std::forward<F>(_task), pr = std::move(promise_ptr),
                     args = std::make_tuple(std::forward<Args>(args)...)]() mutable {
-                try {
-                    if constexpr (std::is_void_v<decltype(std::apply(_task, args))>) {
+                if constexpr (std::is_void_v<decltype(std::apply(_task, args))>) {
+                    try {
                         std::apply(_task, args);
-                        pr->set_value();
-                    } else {
-                        pr->set_value(std::apply(_task, args));
+                    } catch (...) {
+                        pr->set_exception(std::current_exception());
+                        return;
                     }
-                } catch (...) {
-                    pr->set_exception(std::current_exception());
+                    pr->set_value();
+                } else {
+                    pr->set_value(std::apply(_task, args));
                 }
             };
         }
 
         void operator()() { task(); }
 
-       private:
+    private:
         std::function<void()> task;
     };
-
+   public:
     ThreadPool() = delete;
     ThreadPool(const ThreadPool& other) = delete;
     ThreadPool& operator=(const ThreadPool& other) = delete;

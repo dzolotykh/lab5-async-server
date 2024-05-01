@@ -33,7 +33,11 @@ void Server::Server::start() {
     }
     logger << "Ожидание завершения всех клиентов\n";
     for (auto& client : clients) {
-        client.get();
+        try {
+            client.get();
+        } catch (const std::exception& err) {
+            logger << "Ошибка при работе с пользователем: " + std::string(err.what()) << "\n";
+        }
     }
     logger << "Все клиенты отключились\n";
 }

@@ -3,7 +3,7 @@
 namespace Server::Handlers {
 
 UploadHandler::UploadHandler(const ClientSocket &_client, Files::FileManager &_fm)
-    : client(_client), fm(_fm), buffer(1024 * 1024) {}
+    : IHandler(_client), fm(_fm), buffer(1024 * 1024) {}
 
 Response UploadHandler::handle() {
     auto &logger = *Logging::Logger::get_instance();

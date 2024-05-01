@@ -3,7 +3,7 @@
 namespace Server::Handlers {
 GenerationHandler::GenerationHandler(const Server::ClientSocket& _client, Files::FileManager& _fm,
                                      Multithreading::ThreadPool& _tp)
-    : client(_client), tp(_tp), fm(_fm) {
+    : IHandler(_client), tp(_tp), fm(_fm) {
     input_data.resize(32);
 }
 

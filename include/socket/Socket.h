@@ -11,12 +11,17 @@ class Socket {
     using fd = int;
 
     virtual fd get_fd() const noexcept;
-    virtual std::string get_ip() const;
+
+    Socket(const Socket&) = delete;
+    Socket& operator=(const Socket&) = delete;
+    Socket(Socket&& other) noexcept = default;
+    Socket& operator=(Socket&& other) noexcept = default;
 
     virtual ~Socket() noexcept;
 
    protected:
-    Socket(fd _socket_fd);
+    explicit Socket(fd _socket_fd);
+
     fd socket_fd;
 };
 }    // namespace Server
